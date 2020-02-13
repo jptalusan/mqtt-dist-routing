@@ -1,0 +1,33 @@
+version: "3.5"
+services:
+  mqtt:
+    build: ./broker/
+    restart: always
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    expose:
+      - 1883
+    volumes:
+      - ./broker/mosquitto/data:/mosquitto/data
+      - ./broker/mosquitto/config:/mosquitto/config
+      - ./broker/mosquitto/log:/mosquitto/log
+    networks: 
+      - network_test_bed
+
+  rsu-0001:
+    build: ./rsu/
+    container_name: "RSU-0001"
+    restart: on-failure
+    volumes:
+      - ./rsu:/usr/src/app:z
+    networks: 
+      - network_test_bed
+    environment:
+      - PYTHONUNBUFFERED=0
+      - RSU_ID=0001
+    depends_on: 
+      - mqtt
+
+networks:
+  network_test_bed:
