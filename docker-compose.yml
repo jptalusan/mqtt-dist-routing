@@ -2,7 +2,7 @@ version: "3.5"
 services:
   mqtt:
     build: ./broker/
-    restart: always
+    restart: on-failure
     ports:
       - "1883:1883"
       - "9001:9001"
@@ -17,14 +17,13 @@ services:
 
   rsu-0001:
     build: ./rsu/
-    container_name: "RSU-0001"
-    restart: on-failure
+    restart: on-failure #on-failure
     volumes:
       - ./rsu:/usr/src/app:z
     networks: 
       - network_test_bed
     environment:
-      - PYTHONUNBUFFERED=0
+      - PYTHONUNBUFFERED=1
       - RSU_ID=0001
     depends_on: 
       - mqtt
