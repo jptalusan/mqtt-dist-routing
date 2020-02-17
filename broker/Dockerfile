@@ -1,4 +1,9 @@
-FROM eclipse-mosquitto:1.6.8
-# 1.6.8 latest
+FROM python:3.6
 
-# CMD ["mosquitto_sub", "-h", "localhost", "-t", "\"test\""]
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+
+ADD ./requirements.txt /usr/src/app/requirements.txt
+RUN pip3 install -r requirements.txt
+
+CMD [ "python3", "-u", "broker.py" ]

@@ -1,7 +1,7 @@
 version: "3.5"
 services:
   mqtt:
-    build: ./broker/
+    build: ./mqtt/
     restart: on-failure
     ports:
       - "1883:1883"
@@ -9,9 +9,27 @@ services:
     expose:
       - 1883
     volumes:
-      - ./broker/mosquitto/data:/mosquitto/data
-      - ./broker/mosquitto/config:/mosquitto/config
-      - ./broker/mosquitto/log:/mosquitto/log
+      - ./mqtt/mosquitto/data:/mosquitto/data
+      - ./mqtt/mosquitto/config:/mosquitto/config
+      - ./mqtt/mosquitto/log:/mosquitto/log
+    networks: 
+      - network_test_bed
+
+  broker:
+    build: ./broker/
+    restart: on-failure
+    ports:
+      - "7000:7000"
+    expose:
+      - 7000
+    environment:
+      - PYTHONUNBUFFERED=1
+      - RSU_ID=0001
+    volumes:
+      - ./broker:/usr/src/app:z
+    depends_on: 
+      - mongo
+      - mqtt
     networks: 
       - network_test_bed
 
@@ -20,13 +38,65 @@ services:
     restart: on-failure #on-failure
     volumes:
       - ./rsu:/usr/src/app:z
-    networks: 
-      - network_test_bed
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0001
     depends_on: 
       - mqtt
+    networks: 
+      - network_test_bed
+
+  mongo:
+    image: mongo:4.2.3-bionic
+    container_name: mongo
+    restart: always
+    volumes:
+      - ./mongodb/data:/data/db
+      - ./mongodb/mongo.conf:/etc/mongod.conf
+      - ./mongodb/mongod.log:/var/log/mongodb/mongod.log
+    ports:
+      - '27017:27017'
+    expose:
+      - 27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MONGO_INITDB_DATABASE=admin
+    networks: 
+      - network_test_bed
+    command: 
+      - '--quiet'
+      - '--config'
+      - '/etc/mongod.conf'
+      - '--logpath'
+      - '/var/log/mongodb/mongod.log'
+
+  mongo-express:
+    image: mongo-express
+    ports:
+      - 8081:8081
+    restart: always
+    environment:
+      # ME_CONFIG_BASICAUTH_USERNAME: admin
+      # ME_CONFIG_BASICAUTH_PASSWORD: password
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks: 
+      - network_test_bed
+    depends_on: 
+      - "mongo"
+    links:
+      - "mongo"
+    # command: 
+    #   - '--smallfiles'
+    #   - '--quiet'
+    #   - '--logpath'
+    #   - '/dev/null'
 
 networks:
   network_test_bed:

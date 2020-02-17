@@ -54,14 +54,3 @@ def mqtt_thread():
 if __name__ == "__main__":
     mqtt_t = threading.Thread(target=mqtt_thread, args=())
     mqtt_t.start()
-
-    # client = mqtt.Client()
-
-    # client.on_connect = on_connect
-    # client.on_disconnect = on_disconnect
-    # client.on_subscribe = on_subscribe
-    # client.on_message = on_message
-
-    # client.connect("mqtt", 1883, 60)
-
-    # client.loop_forever()
