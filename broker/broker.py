@@ -29,7 +29,7 @@ while not mqtt_client.connected_flag:
 count = 5
 while count != 0:
     message = "{}:{}".format("broker", str(count))
-    mqtt_client.publish("test/topic", message, qos=1, retain=True)
+    mqtt_client.publish("test/topic", message, qos=0, retain=False)
     time.sleep(0.02)
     count -= 1
     print(count)

@@ -15,23 +15,23 @@ services:
     networks: 
       - network_test_bed
 
-  broker:
-    build: ./broker/
-    restart: on-failure
-    ports:
-      - "7000:7000"
-    expose:
-      - 7000
-    environment:
-      - PYTHONUNBUFFERED=1
-      - RSU_ID=0001
-    volumes:
-      - ./broker:/usr/src/app:z
-    depends_on: 
-      - mongo
-      - mqtt
-    networks: 
-      - network_test_bed
+  # broker:
+  #   build: ./broker/
+  #   restart: on-failure
+  #   ports:
+  #     - "7000:7000"
+  #   expose:
+  #     - 7000
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
+  #     - RSU_ID=0001
+  #   volumes:
+  #     - ./broker:/usr/src/app:z
+  #   depends_on: 
+  #     - mongo
+  #     - mqtt
+  #   networks: 
+  #     - network_test_bed
 
   rsu-0001:
     build: ./rsu/

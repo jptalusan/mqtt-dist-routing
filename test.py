@@ -63,7 +63,7 @@ def publish_messages(host, number_of_messages, topic="test/topic", clean_session
     count = number_of_messages
     while count != 0:
         message = "{}:{}".format(client_id, str(count))
-        client.publish(topic, message, qos=1, retain=True)
+        client.publish(topic, message, qos=0, retain=False)
         time.sleep(0.02)
         count -= 1
         print(count)
@@ -86,5 +86,5 @@ if __name__ == "__main__":
     # mqtt_t.start()
 
     numbers = [1, 2, 3, 4, 5]
-    squaredNumbers = calculateParallel("localhost", 500, "test/topic", False, threads=4)
+    squaredNumbers = calculateParallel("localhost", 3, "test/topic", False, threads=4)
     print("Done")

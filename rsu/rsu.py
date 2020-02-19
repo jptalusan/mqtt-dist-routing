@@ -27,7 +27,7 @@ def on_connect(client, userdata, flags, rc):
     if rc == 0:
         client.connected_flag = True
         print("Connected OK")
-        client.subscribe("test/topic", qos=1)
+        client.subscribe("test/topic", qos=0)
         # client.subscribe("#")
     else:
         print("Bad connection RC = ", rc)
@@ -38,7 +38,7 @@ def on_disconnect(client, userdata, rc):
         client.loop_stop()
         # client.loop_start()
 
-def mqtt_thread():    
+def mqtt_thread():
     client = mqtt.Client(client_id="rsu-0001", clean_session=True)
 
     client.on_connect = on_connect
