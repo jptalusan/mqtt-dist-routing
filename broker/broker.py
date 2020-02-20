@@ -1,52 +1,49 @@
 import paho.mqtt.client as mqtt
-from pymongo import MongoClient
-# pprint library is used to make the output look more pretty
-from pprint import pprint
 import time
+import json
+import threading
+from pprint import pprint
 
-mqtt.Client.connected_flag = False
+from common.src.mqtt_utils import MyMQTTClass
+from common.src.mongo_class import MyMongoDBClass
+from common.src.basic_utils import *
+from src.Broker_Mqtt import Broker_Mqtt
 
-def on_connect(client, userdata, flags, rc):
-    if rc == 0:
-        client.connected_flag = True
-        print("Connected OK")
-    else:
-        print("Bad connection RC = ", rc)
+print(time.time())
+print("HELLO")
 
-mqtt_client = mqtt.Client(client_id="broker", clean_session=True)
-mqtt_client.on_connect = on_connect
+# http://www.steves-internet-guide.com/mqtt-clean-sessions-example/
 
-try:
-    mqtt_client.connect("mqtt")
-except ConnectionRefusedError as e:
-    print(e)
+import os
 
-mqtt_client.loop_start()
-while not mqtt_client.connected_flag:
-    print("in wait loop")
-    time.sleep(1)
+# maybe better to keep sending tasks until there is a response.
+def get_unsent_tasks(mqttc, mongodbc):
+    print("get_unsent_tasks()")
+    threading.Timer(5.0, get_unsent_tasks, args=(mqttc, mongodbc,)).start()
+    tasks = mongodbc.find("tasks", {"processed": {"$lt": 2}})
+    for task in tasks:
+        t_id = task['_id']
+        pprint(t_id)
+        rsu = task['gridA']
+        topic = "middleware/rsu/{}".format(rsu)
+        payload = json.dumps(task)
 
-count = 5
-while count != 0:
-    message = "{}:{}".format("broker", str(count))
-    mqtt_client.publish("test/topic", message, qos=0, retain=False)
-    time.sleep(0.02)
-    count -= 1
-    print(count)
+        # "middleware/rsu/+; wild card subscription
+        mongodbc.update("tasks", t_id, {"processed": 1})
+        mqttc.send(topic, encode(payload))
 
-mqtt_client.loop_stop()
+if __name__ == "__main__":
+    # hostname = "google.com"
+    # response = os.system("ping -c 1 " + hostname)
+    # if response == 0:
+    #     print("Host is up")
 
-mongo_client = MongoClient("mongo")
-db=mongo_client.admin
-# Issue the serverStatus command and print the results
-# serverStatusResult=db.command("serverStatus")
-# pprint(serverStatusResult)
+    mongodbc = MyMongoDBClass(host="mongo", db="admin")
+    mongodbc.get_client().is_mongos
 
-
-t = {'job':"A", 't_id':"0001"}
-result = db.tasks.insert_one(t)
-print('Created {0} of 0 as {1}'.format(0, result.inserted_id))
-
-task = db.tasks.find_one({'job': "B"})
-print(task)
-
+    mqttc = Broker_Mqtt(host="mqtt", mongodb_c=mongodbc)
+    mqttc.connect()
+    mqttc.start_sub_thread(["test/topic", "middleware/broker/task"])
+    
+    get_unsent_tasks(mqttc, mongodbc)
+    mqttc.send("test/topic", "TAE")

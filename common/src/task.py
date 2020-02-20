@@ -32,7 +32,7 @@ class Task(object):
     
     def __init__(self, t_list):
         self.inquiry_time = current_milli_time()
-        self.task_id = t_list[0]
+        self._id = t_list[0]
         self.node = t_list[1]
         self.gridA = t_list[2]
         self.gridB = t_list[3]
@@ -69,7 +69,7 @@ class Task(object):
         pass
         
     def __repr__(self):
-        return "{:16.16}\t{}:{}\\{}\t{}".format(self.task_id, self.node, self.gridA, self.gridB, self.time_window)
+        return "{:16.16}\t{}:{}\\{}\t{}".format(self._id, self.node, self.gridA, self.gridB, self.time_window)
 
     def __str__(self):
-        return "{:16.16}\t{}:{}\\{}\t{}".format(self.task_id, self.node, self.gridA, self.gridB, self.time_window)
+        return "{:16.16}\t{}:{}\\{}\t{}".format(self._id, self.node, self.gridA, self.gridB, self.time_window)

@@ -1,56 +1,51 @@
 import paho.mqtt.client as mqtt
+from pymongo import MongoClient
+# pprint library is used to make the output look more pretty
+from pprint import pprint
 import time
-import json
-import threading
-
-print(time.time())
-print("HELLO")
-
-# http://www.steves-internet-guide.com/mqtt-clean-sessions-example/
-
-import os
-hostname = "google.com"
-response = os.system("ping -c 1 " + hostname)
-if response == 0:
-    print("Host is up")
 
 mqtt.Client.connected_flag = False
-# The callback for when a PUBLISH message is received from the server.
-def on_message(client, userdata, message):
-    print("Received message '" + str(message.payload) + "' on topic '"
-        + message.topic + "' with QoS " + str(message.qos))
-    
-def on_subscribe(client, userdata, mid, granted_qos):
-    print("Subscribed: ", str(mid))
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         client.connected_flag = True
         print("Connected OK")
-        client.subscribe("test/topic", qos=0)
-        # client.subscribe("#")
     else:
         print("Bad connection RC = ", rc)
 
-def on_disconnect(client, userdata, rc):
-    if rc != 0:
-        print("Unexpected disconnection.")
-        client.loop_stop()
-        # client.loop_start()
+mqtt_client = mqtt.Client(client_id="broker", clean_session=True)
+mqtt_client.on_connect = on_connect
 
-def mqtt_thread():
-    client = mqtt.Client(client_id="rsu-0001", clean_session=True)
+try:
+    mqtt_client.connect("mqtt")
+except ConnectionRefusedError as e:
+    print(e)
 
-    client.on_connect = on_connect
-    client.on_disconnect = on_disconnect
-    client.on_subscribe = on_subscribe
-    client.on_message = on_message
+mqtt_client.loop_start()
+while not mqtt_client.connected_flag:
+    print("in wait loop")
+    time.sleep(1)
 
-    # client.connect("test.mosquitto.org", port=1883, keepalive=60)
-    client.connect("mqtt", port=1883, keepalive=60)
+count = 5
+while count != 0:
+    message = "{}:{}".format("broker", str(count))
+    mqtt_client.publish("test/topic", message, qos=0, retain=False)
+    time.sleep(0.02)
+    count -= 1
+    print(count)
 
-    client.loop_forever()
+mqtt_client.loop_stop()
 
-if __name__ == "__main__":
-    mqtt_t = threading.Thread(target=mqtt_thread, args=())
-    mqtt_t.start()
+mongo_client = MongoClient("mongo")
+db=mongo_client.admin
+# Issue the serverStatus command and print the results
+# serverStatusResult=db.command("serverStatus")
+# pprint(serverStatusResult)
+
+
+# t = {'job':"A", 't_id':"0001"}
+# result = db.tasks.insert_one(t)
+# print('Created {0} of 0 as {1}'.format(0, result.inserted_id))
+
+# task = db.tasks.find_one()
+# print(task)

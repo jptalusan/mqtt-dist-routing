@@ -1,5 +1,4 @@
-from src import header as generator
-from src.mqtt_utils import MyMQTTClass
+import sys
 import networkx as nx
 import pickle
 import os
@@ -9,7 +8,10 @@ from datetime import datetime
 import json
 import paho.mqtt.client as mqtt
 
-time_print = lambda type: datetime.now().strftime("%d/%m/%Y %H:%M:%S") if type == 'str' else int(round(time.time() * 1000))
+sys.path.append('..')
+from common.src import header as generator
+from common.src.mqtt_utils import MyMQTTClass
+from common.src.basic_utils import time_print
 
 start = time.time()
 
@@ -29,7 +31,7 @@ print(len(nx_g.nodes()))
 # https://github.com/gboeing/osmnx/issues/363
 # print(nx_g.nodes[0])
 
-number_of_queries = 1
+number_of_queries = 2
 clean_session = False
 
 file_path = os.path.join(data_dir, '{}-queries-for-{}-{}.pkl'.format(number_of_queries, x, y))
@@ -73,11 +75,14 @@ mqttc.connect()
 # mqttc.start_sub_thread(["test/topic", "test/topic2"])
 
 # Publishing messages, need to use mqttc.open() first??? I dont think so 
-# mqttc.open()
+mqttc.open()
 for count, t in enumerate(task_list):
     payload = {}
     payload['time_sent'] = time_print(0)
     payload['data'] = t.__dict__
+    print(t.__dict__)
     data = json.dumps(payload)
-    mqttc.send(data)
+    mqttc.send("middleware/broker/task", data)
     time.sleep(0.02)
+
+mqttc.close()

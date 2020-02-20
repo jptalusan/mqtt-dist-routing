@@ -72,7 +72,7 @@ def save_query_dataframe(df, path):
     return True
 
 def get_trunc_task_id(t_id):
-        return '{:9.9}'.format(str(t_id))
+        return '{:8.8}'.format(str(t_id))
 
 # ID, Node, Grid1, Grid2, Time
 def generate_tasks(Qdf): 
@@ -92,12 +92,12 @@ def generate_tasks(Qdf):
             og.append(None)
 
 #             # [t] * len(og) -> Assigns time variable to each pair
-            ids = ["{}{}:{}".format(get_trunc_task_id(t_id), 
+            ids = ["{}{}{}".format(get_trunc_task_id(t_id), 
                                     str(i).zfill(3), 
                                     str(len(og) - 2).zfill(3)) for i in range(len(og) - 1)]
             pairs = zip(ids, nodes, og, og[1:], [t] * len(og))
         elif len(og) == 1:
-            id_ = "{}{}:{}".format(get_trunc_task_id(t_id), 
+            id_ = "{}{}{}".format(get_trunc_task_id(t_id), 
                                     str(0).zfill(3), 
                                     str(0).zfill(3))
             pairs = zip([id_], [s], [d], [og[0]], [t])
