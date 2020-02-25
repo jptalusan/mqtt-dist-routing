@@ -12,6 +12,7 @@ sys.path.append('..')
 from common.src import header as generator
 from common.src.mqtt_utils import MyMQTTClass
 from common.src.basic_utils import time_print
+from common.conf import GLOBAL_VARS
 
 start = time.time()
 
@@ -82,7 +83,7 @@ for count, t in enumerate(task_list):
     payload['data'] = t.__dict__
     print(t.__dict__)
     data = json.dumps(payload)
-    mqttc.send("middleware/broker/task", data)
+    mqttc.send(GLOBAL_VARS.QUERY_TO_BROKER, data)
     time.sleep(0.02)
 
 mqttc.close()

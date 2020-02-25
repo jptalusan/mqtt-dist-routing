@@ -36,6 +36,9 @@ class MyMongoDBClass():
         res = self._db[collection].find_one_and_update({"_id": id}, {'$set': change_dict})
         return res
 
+    def delete_all(self, collection):
+        return self._db[collection].delete_many({})
+
     def get_db(self, db):
         return self._mongoc[db]
 

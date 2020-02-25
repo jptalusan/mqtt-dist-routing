@@ -1,4 +1,6 @@
 Trying something newer and simpler just using mqtt
 
-touch mongodb/mongo.log  
-touch mqtt/mosquitto/log/mosquitto.log
+touch mongodb/mongod.log  
+touch mqtt/mosquitto/log/mosquitto.log  
+
+conda env create -f environment.yml  

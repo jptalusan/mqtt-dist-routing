@@ -7,6 +7,7 @@ from pprint import pprint
 from common.src.mqtt_utils import MyMQTTClass
 from common.src.mongo_class import MyMongoDBClass
 from common.src.basic_utils import *
+from common.conf import GLOBAL_VARS
 from src.Broker_Mqtt import Broker_Mqtt
 
 print(time.time())
@@ -25,7 +26,9 @@ def get_unsent_tasks(mqttc, mongodbc):
         t_id = task['_id']
         pprint(t_id)
         rsu = task['gridA']
-        topic = "middleware/rsu/{}".format(rsu)
+        # topic = "{}{}".format(GLOBAL_VARS.BROKER_TO_RSU, rsu)
+        topic = add_destination(GLOBAL_VARS.BROKER_TO_RSU, rsu)
+        print("Broker sending to topic: {}".format(topic))
         payload = json.dumps(task)
 
         # "middleware/rsu/+; wild card subscription
@@ -41,9 +44,15 @@ if __name__ == "__main__":
     mongodbc = MyMongoDBClass(host="mongo", db="admin")
     mongodbc.get_client().is_mongos
 
+    if __debug__ == 1:
+        mongodbc.delete_all("tasks")
+
     mqttc = Broker_Mqtt(host="mqtt", mongodb_c=mongodbc)
     mqttc.connect()
-    mqttc.start_sub_thread(["test/topic", "middleware/broker/task"])
+    mqttc.start_sub_thread(["test/topic", 
+                            GLOBAL_VARS.QUERY_TO_BROKER, 
+                            GLOBAL_VARS.RESPONSE_TO_BROKER, 
+                            GLOBAL_VARS.PROCESSED_TO_BROKER])
     
     get_unsent_tasks(mqttc, mongodbc)
-    mqttc.send("test/topic", "TAE")
+    # mqttc.send("test/topic", "TAE")
