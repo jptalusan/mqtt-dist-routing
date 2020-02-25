@@ -63,7 +63,6 @@ else:
 # Qdf['json'] = Qdf.apply(lambda x: x.to_json(), axis=1)
 
 task_list = generator.generate_tasks(Qdf)
-
 # If you want to use a specific client id, use
 # mqttc = MyMQTTClass("client-id")
 # but note that the client id must be unique on the broker. Leaving the client
@@ -80,8 +79,9 @@ mqttc.open()
 for count, t in enumerate(task_list):
     payload = {}
     payload['time_sent'] = time_print(0)
+    # payload['data'] = t.get_json()
     payload['data'] = t.__dict__
-    print(t.__dict__)
+    print(payload['data'])
     data = json.dumps(payload)
     mqttc.send(GLOBAL_VARS.QUERY_TO_BROKER, data)
     time.sleep(0.02)

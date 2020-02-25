@@ -19,5 +19,6 @@ shapely
 folium
 fastparquet
 geopandas
+geohash_hilbert
 
-# key-value stor
+# key-value store

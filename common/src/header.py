@@ -4,7 +4,8 @@ import pandas as pd
 import uuid
 import copy
 from .task import Task
-
+import json
+from common.conf import GLOBAL_VARS
 # This is the entirety of query generation because the SG needs to be "pre-determined" before processing
 # (since we dont have any model that would tell us the next best grid right now)
 # Maybe creating a dataframe will be easier here.
@@ -103,6 +104,12 @@ def generate_tasks(Qdf):
             pairs = zip([id_], [s], [d], [og[0]], [t])
             pass
         
-        [task_list.append(Task(p)) for p in list(pairs)]
+        labels = ["_id", "node", "gridA", "gridB", "time_window"]
+        for p in pairs:
+            task_json = dict(zip(labels, p))
+            task_json['state'] = GLOBAL_VARS.TASK_STATES["UNSENT"]
+            task_json['next_node'] = None
+            task_json['inquiry_time'] = None
+            task_list.append(Task(task_json))
         task_list.extend(list(pairs))
     return task_list

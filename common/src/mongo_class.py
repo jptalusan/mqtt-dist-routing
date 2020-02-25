@@ -11,7 +11,7 @@ class MyMongoDBClass():
         pass
 
     def insert(self, collection, payload):
-        print("Insert -> {}".format(payload))
+        # print("Insert -> {}".format(payload))
         c = self._db[collection]
         t_id = c.insert_one(payload).inserted_id
         return t_id

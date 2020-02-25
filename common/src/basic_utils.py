@@ -1,5 +1,7 @@
 import datetime
 import time
+import random
+import string
 
 time_print = lambda type: datetime.now().strftime("%d/%m/%Y %H:%M:%S") if type == 'str' else int(round(time.time() * 1000))
 
@@ -14,3 +16,8 @@ def add_destination(topic, dest):
         topic = topic + "/" + dest
 
     return topic
+
+def randomString(stringLength=10):
+    """Generate a random string of fixed length """
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(stringLength))

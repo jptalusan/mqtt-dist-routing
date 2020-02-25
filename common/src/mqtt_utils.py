@@ -15,6 +15,7 @@ class MyMQTTClass:
         self._mqttc.on_publish = self.mqtt_on_publish
         self._mqttc.on_subscribe = self.mqtt_on_subscribe
 
+        self._client_id = client_id
         self._host = host
         self._port = port
         self._keep_alive = keep_alive

@@ -1,18 +1,29 @@
 from common.src.mqtt_utils import MyMQTTClass
+import paho.mqtt.client as mqtt
+from common.src.task import Task as Route_Task
+from common.conf import GLOBAL_VARS
 import common.src.basic_utils as utils
 import json
 from pprint import pprint
+import threading
+import time
 
 class Worker_Mqtt(MyMQTTClass):
     def __init__(self, client_id=None, host="localhost", port=1883, keep_alive=60, clean_session=True, mongodb_c=None):
         super().__init__(client_id, host, port, keep_alive, clean_session)
+        # self._mqttc = mqtt.Client(client_id=client_id, clean_session=clean_session)
         print("init worker mqtt")
         self._mongodb_c = mongodb_c
+        self._client_id = client_id
+        self._tasks = []
+        self._processed_tasks = []
+        self.process_tasks()
 
-        # self._mongodb_c.insert("HEY")
+        # self._timer_task = threading.Thread(target=self.process_tasks, args = ())
+        # self._timer_task.start()
 
     def mqtt_on_message(self, mqttc, obj, msg):
-        # print("Inheritance:" + msg.topic+" "+str(msg.qos)+" "+str(msg.payload))
+        # print("Worker receives:" + msg.topic+" "+str(msg.qos)+" "+str(msg.payload))
         self.parse_topic(msg)
 
     def parse_topic(self, msg):
@@ -23,27 +34,42 @@ class Worker_Mqtt(MyMQTTClass):
             # Check if the name is RSU-XXXX
             # if 'rsu' in rsu.lower():
                 # update mongodb entry as Responded (2)
-            print("worker received task from broker: {}".format(msg.payload))
+            # print("worker received task from broker: {}".format(msg.payload))
+            data = json.loads(msg.payload)
 
+            r = Route_Task(data)
+            print("ID: ", r._id)
+            if not self.task_exists(r._id):
+                print("Route Task id: ", r._id)
+                self._tasks.append(r)
+
+                if not self._timer_task.is_alive():
+                    self._timer_task = threading.Thread(target=self.process_tasks, args = ())
+                    self._timer_task.start()
+                    # self._timer_task = threading.Timer(5.0, self.process_tasks, args=()).start()
+            else:
+                print("ID {} already exists.".format(r._id))
         return True
+    
+    def task_exists(self, id):
+        if id in self._processed_tasks:
+            return True
+        if len(self._tasks) == 0:
+            return False
+        for t in self._tasks:
+            if t._id == id:
+                return True
+        return False
 
-    # Unsent = 0, Sent = 1, Responded = 2, Task_done = 3
-    def generate_mongo_payload(self, message):
-        _m = utils.decode(message)
-        _d = json.loads(_m)
-        data = _d['data']
-        data['processed'] = 0
-        data['next_node'] = None
-        t_id = data['_id']
-        data['step'] = t_id[-6:-3]
-        data['steps'] = t_id[-3:]
-        data['t_id'] = t_id[0:-6]
-
-        print("Finding:", t_id)
-        _DB = self._mongodb_c.get_db("admin")
-        found = _DB["tasks"].count_documents({"_id": t_id})
-        if found == 0:
-            t_id = self._mongodb_c.insert("tasks", data)
-            print("inserted: {}".format(t_id))
-        else:
-            print("ID already exists")
+    def process_tasks(self):
+        print("Processing {} tasks remaining".format(len(self._tasks)))
+        while len(self._tasks) > 0:
+            try:
+                t = self._tasks.pop(0)
+                self._processed_tasks.append(t._id)
+                topic = utils.add_destination(GLOBAL_VARS.RESPONSE_TO_BROKER, self._client_id)
+                print("Sending {} to {}".format(t.__dict__, topic))
+                self.send(topic, json.dumps(t.__dict__))
+                return True
+            except IndexError as e:
+                print(e)

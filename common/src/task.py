@@ -29,17 +29,22 @@ class Task(object):
     execution_end_time = None
     actual_grid_assignment = None
     manhattan_distance = None
+    state = None
     
-    def __init__(self, t_list):
-        self.inquiry_time = current_milli_time()
-        self._id = t_list[0]
-        self.node = t_list[1]
-        self.gridA = t_list[2]
-        self.gridB = t_list[3]
-        self.time_window = t_list[4]
+    def __init__(self, json_data):
+        self.inquiry_time = json_data['inquiry_time']
+        self._id = json_data['_id']
+        self.node = json_data['node']
+        self.gridA = json_data['gridA']
+        self.gridB = json_data['gridB']
+        self.time_window = json_data['time_window']
+        self.state = json_data['state']
+        self.next_node = json_data['next_node']
         
-        pass
-    
+        self.parsed_id = self._id[0:-6]
+        self.step = self._id[-6:-3]
+        self.steps = self._id[-3:]
+
     def get_tuple(self):
         pass
     
@@ -68,6 +73,20 @@ class Task(object):
     def get_stats(self):
         pass
         
+    def get_json(self):
+        d = {}
+        
+        d['inquiry_time'] = self.inquiry_time
+        d['_id'] = self._id
+        d['node'] = self.node
+        d['gridA'] = self.gridA
+        d['gridB'] = self.gridB
+        d['time_window'] = self.time_window
+        d['state'] = self.state
+        d['next_node'] = self.next_node
+        
+        return d
+
     def __repr__(self):
         return "{:16.16}\t{}:{}\\{}\t{}".format(self._id, self.node, self.gridA, self.gridB, self.time_window)
 
