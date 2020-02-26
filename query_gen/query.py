@@ -32,7 +32,7 @@ print(len(nx_g.nodes()))
 # https://github.com/gboeing/osmnx/issues/363
 # print(nx_g.nodes[0])
 
-number_of_queries = 2
+number_of_queries = 5
 clean_session = False
 
 file_path = os.path.join(data_dir, '{}-queries-for-{}-{}.pkl'.format(number_of_queries, x, y))
@@ -63,6 +63,8 @@ else:
 # Qdf['json'] = Qdf.apply(lambda x: x.to_json(), axis=1)
 
 task_list = generator.generate_tasks(Qdf)
+# [print(t.__dict__) for t in task_list]
+
 # If you want to use a specific client id, use
 # mqttc = MyMQTTClass("client-id")
 # but note that the client id must be unique on the broker. Leaving the client
@@ -76,8 +78,9 @@ mqttc.connect()
 
 # Publishing messages, need to use mqttc.open() first??? I dont think so 
 mqttc.open()
+for count, t in enumerate(task_list):
 # for count, t in enumerate(task_list[0:1]):
-for count, t in enumerate(task_list[1:2]):
+# for count, t in enumerate(task_list[1:2]):
     payload = {}
     payload['time_sent'] = time_print(0)
     # payload['data'] = t.get_json()

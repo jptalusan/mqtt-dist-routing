@@ -1,6 +1,6 @@
 import json
 import threading
-
+import time
 import common.src.basic_utils as utils
 from common.src.mqtt_utils import MyMQTTClass
 from common.conf import GLOBAL_VARS
@@ -26,11 +26,12 @@ class Broker_Mqtt(MyMQTTClass):
                 print("Broker receives : {}".format(str(msg.payload)))
                 self.generate_mongo_payload(msg.payload)
 
-                self._timer_task = threading.Thread(target=self.get_unsent_tasks, args = ())
-                self._timer_task.start()
-                # if self._timer_task.is_alive():
-                # else:
-                #     print("dead\n")
+                if not self._timer_task.is_alive():
+                    print("Started get_unsent_task thread.")
+                    self._timer_task = threading.Thread(target=self.get_unsent_tasks, args = ())
+                    self._timer_task.start()
+                else:
+                    print("get_unsent_task thread already running.")
 
         if GLOBAL_VARS.RESPONSE_TO_BROKER in msg.topic:
             rsu = t_arr[-1]
@@ -38,10 +39,20 @@ class Broker_Mqtt(MyMQTTClass):
             # Check if the name is RSU-XXXX
             if 'rsu' in rsu.lower():
                 # update mongodb entry as Responded (2)
-                data = json.loads(msg.payload)
-                print("worker-{} responded with :{}".format(rsu, data['_id']))
-                self._mongodb_c.update("tasks", data['_id'], {"state": GLOBAL_VARS.TASK_STATES["RESPONDED"]})
+                data = json.loads(utils.decode(msg.payload))
+                utils.print_log("worker-{} responded with :{}".format(rsu, data['_id']))
+                # self._mongodb_c.update("tasks", data['_id'], {"state": GLOBAL_VARS.TASK_STATES["RESPONDED"]})
+                self._mongodb_c.update("tasks", data['_id'], {"state": GLOBAL_VARS.TASK_STATES["RESPONDED"],
+                                                              "processed_time": utils.time_print(int),
+                                                              "route": data['route'],
+                                                              "next_node": data['route'][-1]})
+                utils.print_log("Updated: {}".format(data['_id']))
                 pass
+        
+        if "error_response" in msg.topic:
+                data = json.loads(utils.decode(msg.payload))
+                self._mongodb_c.update("tasks", data['_id'], {"state": GLOBAL_VARS.TASK_STATES["ERROR"],
+                                                              "processed_time": utils.time_print(int)})
 
         if "middlleware" in t_arr and "processed" in t_arr:
             rsu = t_arr[-1]
@@ -62,6 +73,7 @@ class Broker_Mqtt(MyMQTTClass):
         data['processed_time'] = None
         data['state'] = GLOBAL_VARS.TASK_STATES["UNSENT"]
         data['next_node'] = None
+        data['route'] = None
         t_id = data['_id']
 
         print("Finding:", t_id)
@@ -75,26 +87,58 @@ class Broker_Mqtt(MyMQTTClass):
 
     # maybe better to keep sending tasks until there is a response.
     # maybe change to while loop
+    # Some issue here of not getting anything looping when no message arrives.
     def get_unsent_tasks(self):
         print("get_unsent_tasks()")
         # threading.Timer(5.0, get_unsent_tasks, args=(mqttc, mongodbc,)).start()
+        # tasks = list(self._mongodb_c.find("tasks", {"state": {"$lte": GLOBAL_VARS.TASK_STATES["SENT"]}}))
         tasks = list(self._mongodb_c.find("tasks", {"state": {"$lt": GLOBAL_VARS.TASK_STATES["PROCESSED"]}}))
         while len(tasks) > 0:
-            task = tasks.pop(0)
-            t_id = task['_id']
-            gridA = task['gridA']
-            gridB = task['gridB']
+            for task in tasks:
+                t_id = task['_id']
 
-            if isinstance(gridA, int):
-                rsu = gridB
-            else:
-                rsu = gridA
+                double_check = self._mongodb_c.find_one("tasks", query_dict = {'_id': t_id})
+                if double_check:
+                    if double_check['state'] > GLOBAL_VARS.TASK_STATES["SENT"]:
+                        utils.print_log("{} already sent...".format(t_id))
+                        continue
+                    
+                gridA = task['gridA']
+                gridB = task['gridB']
 
-            topic = utils.add_destination(GLOBAL_VARS.BROKER_TO_RSU, rsu)
-            print("Broker sending to topic: {}".format(topic))
-            payload = json.dumps(task)
+                if isinstance(gridA, int):
+                    rsu = gridB
+                else:
+                    rsu = gridA
 
-            # "middleware/rsu/+; wild card subscription
-            self._mongodb_c.update("tasks", t_id, {"state": GLOBAL_VARS.TASK_STATES["SENT"],
-                                                   "processed_time": utils.time_print(int)})
-            self.send(topic, utils.encode(payload))
+                p_task = self.get_next_node_for_unsent_tasks(task['parsed_id'], task['step'], task['steps'])
+                if p_task:
+                    utils.print_log("Got next_node:{}".format(p_task['next_node']))
+                    task['next_node'] = p_task['next_node']
+
+                topic = utils.add_destination(GLOBAL_VARS.BROKER_TO_RSU, rsu)
+                utils.print_log("Broker sending to topic: {}".format(topic))
+                payload = json.dumps(task)
+
+                # "middleware/rsu/+; wild card subscription
+                self._mongodb_c.update("tasks", t_id, {"state": GLOBAL_VARS.TASK_STATES["SENT"],
+                                                    "processed_time": utils.time_print(int)})
+                self.send(topic, utils.encode(payload))
+
+            tasks = list(self._mongodb_c.find("tasks", {"state": {"$lte": GLOBAL_VARS.TASK_STATES["PROCESSED"]}}))
+            # time.sleep(5)
+
+    def get_next_node_for_unsent_tasks(self, parsed_id, step, steps):
+        utils.print_log("get_next_node_for_unsent_tasks({}, {}, {})".format(parsed_id, step, steps))
+
+        i_step = int(step)
+        
+        if i_step == 0:
+            return None
+        p_step = str(i_step - 1).zfill(3)
+        q = {'parsed_id': parsed_id, 'step': p_step, 'steps':steps, 'state':GLOBAL_VARS.TASK_STATES["RESPONDED"]}
+        # utils.print_log(q)
+        prior_step = self._mongodb_c.find_one("tasks", query_dict=q)
+        if prior_step:
+            # utils.print_log(prior_step)
+            return prior_step

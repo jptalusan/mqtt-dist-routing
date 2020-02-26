@@ -7,7 +7,7 @@ class MyMongoDBClass():
         self._mongoc = MongoClient(host, port)
 
         self._db = self._mongoc[db]
-        print(self._db)
+        # print(self._db)
         pass
 
     def insert(self, collection, payload):
@@ -16,17 +16,24 @@ class MyMongoDBClass():
         t_id = c.insert_one(payload).inserted_id
         return t_id
 
-    def find_one(self, collection):
+    def find_one(self, collection, query_dict=None):
         # 5e4cd5d3a68938cdc24707d6
-        res = self._db[collection].find_one()
-        pprint(res)
+        res = self._db[collection].find_one(query_dict)
+        # pprint(res)
         return res
 
     def find(self, collection, query_dict):
         # 5e4cd5d3a68938cdc24707d6
         res = self._db[collection].find(query_dict)
-        pprint("Found: {}".format(self._db[collection].count_documents(query_dict)))
+        # pprint("Found: {}".format(self._db[collection].count_documents(query_dict)))
         return res
+
+    def count(self, collection):
+    # 5e4cd5d3a68938cdc24707d6
+        res = self._db[collection].count()
+
+        # pprint("Found: {}".format(self._db[collection].count()))
+        return len(list(res))
 
     def find_unsent_tasks(self):
         res = self._db["tasks"].find({'processed':None})

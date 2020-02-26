@@ -21,3 +21,7 @@ def randomString(stringLength=10):
     """Generate a random string of fixed length """
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(stringLength))
+
+def print_log(log, level=0, log_type="D"):
+    d = datetime.datetime.utcnow().strftime("%d %b %Y %H:%M:%S.%f")[:-3]
+    print("{}:{} {} # {}".format(level, log_type, d, log))

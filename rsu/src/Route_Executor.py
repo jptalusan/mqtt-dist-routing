@@ -24,6 +24,7 @@ import geohash_hilbert as ghh
 
 from src.conf import LOCAL_RSU_VARS
 from src import adjustable_grids as ag
+import common.src.basic_utils as utils
 
 DEBUG = False
 
@@ -81,7 +82,7 @@ class Route_Executor():
         task_count = int(task['step'])
         task_length = int(task['steps'])
 
-        if next_node is None and task_length != 0:
+        if next_node is None and (task_count != 0 and task_length != 0):
             print("Error: Need to get the next_node value first.")
             return None
 
@@ -186,6 +187,9 @@ class Route_Executor():
             except nx.NetworkXNoPath:
     #             print("No path: {}-{}".format(node, b))
                 pass
+            except nx.NodeNotFound as e:
+                utils.print_log("Error: {}".format(e))
+    #         print(total_time, route)
 
         if route == None:
             return None, None
@@ -236,6 +240,9 @@ class Route_Executor():
             except nx.NetworkXNoPath:
     #             print("No path: {}-{}".format(node, b))
                 pass
+            except nx.NodeNotFound as e:
+                utils.print_log("Error: {}".format(e))
+    #         print(total_time, route)
     #         print(total_time, route)
             if route == None:
                 return None, None
@@ -260,6 +267,8 @@ class Route_Executor():
             except nx.NetworkXNoPath:
     #             print("No path: {}-{}".format(node, b))
                 pass
+            except nx.NodeNotFound as e:
+                utils.print_log("Error: {}".format(e))
     #         print(total_time, route)
             if route == None:
                 return None, None

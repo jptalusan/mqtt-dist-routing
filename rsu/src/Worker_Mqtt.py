@@ -27,6 +27,9 @@ class Worker_Mqtt(MyMQTTClass):
     def mqtt_on_message(self, mqttc, obj, msg):
         # print("Worker receives:" + msg.topic+" "+str(msg.qos)+" "+str(msg.payload))
         self.parse_topic(msg)
+        if not self._timer_task.is_alive():
+            self._timer_task = threading.Thread(target=self.process_tasks, args = ())
+            self._timer_task.start()
 
     def parse_topic(self, msg):
         t_arr = msg.topic.split("/")
@@ -41,21 +44,20 @@ class Worker_Mqtt(MyMQTTClass):
             print("RSU receives: ", data)
             r = Route_Task(data)
             print("ID: ", r._id)
+            
             if not self.task_exists(r._id):
                 print("Route Task id: ", r._id)
                 self._tasks.append(r)
-
-                if not self._timer_task.is_alive():
-                    self._timer_task = threading.Thread(target=self.process_tasks, args = ())
-                    self._timer_task.start()
                     # self._timer_task = threading.Timer(5.0, self.process_tasks, args=()).start()
             else:
                 print("ID {} already exists.".format(r._id))
         return True
     
+    # Update the next_node if possible
     def task_exists(self, id):
-        if id in self._processed_tasks:
-            return True
+        # if id in self._processed_tasks:
+        #     return True
+        
         if len(self._tasks) == 0:
             return False
         for t in self._tasks:
@@ -65,19 +67,37 @@ class Worker_Mqtt(MyMQTTClass):
 
     def process_tasks(self):
         print("Processing {} tasks remaining".format(len(self._tasks)))
+        for t in self._tasks:
+            utils.print_log("Task:{}".format(t._id))
+
         while len(self._tasks) > 0:
+            t_dict = {}
             try:
                 t = self._tasks.pop(0)
-                self._processed_tasks.append(t._id)
-
-                r = self._route_extractor.find_route(t.get_json())
-                if r:
+                t_dict = t.get_json()
+                route = self._route_extractor.find_route(t_dict)
+                if route[1]:
+                    r = route[1]
+                    r_int = [int(x) for x in r]
+                    t_dict['route'] = r_int
                     topic = utils.add_destination(GLOBAL_VARS.RESPONSE_TO_BROKER, self._client_id)
-                    print("Sending {} to {}".format(t.__dict__, topic))
-                    self.send(topic, json.dumps(t.__dict__))
+                    utils.print_log("Sending {} to {}".format(t_dict['_id'], topic))
+                    utils.print_log("Removing {} from task queue and appending to processed_tasks".format(t_dict['_id']))
+                    utils.print_log("{} Is done! with route: {}".format(t_dict['_id'], r_int))
+                    # self._processed_tasks.append(t_dict['_id'])
+                    self.send(topic, json.dumps(t_dict))
                     return True
                 else:
-                    print("error encountered.")
+                    print("Error: error encountered.")
+                    # TODO: Send some info to broker that this route is dead.
+                    self.send(GLOBAL_VARS.ERROR_RESPONSE_TO_BROKER, json.dumps(t_dict))
+
+                    # try:
+                    #     self._processed_tasks.remove(t_dict['_id'])
+                    # except ValueError as e:
+                    #     print(e)
                     # Probably should delete this task then and wait until i get a new one with new_node
             except IndexError as e:
                 print(e)
+
+            # time.sleep(2)
