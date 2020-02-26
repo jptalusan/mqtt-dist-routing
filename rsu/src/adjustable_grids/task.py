@@ -10,7 +10,7 @@ import time
 from sklearn.metrics import explained_variance_score
 from shapely.geometry import Point
 
-from .utility import *
+from src.adjustable_grids import utility
 
 current_milli_time = lambda: int(round(time.time() * 1000))
 
@@ -29,22 +29,17 @@ class Task(object):
     execution_end_time = None
     actual_grid_assignment = None
     manhattan_distance = None
-    state = None
     
-    def __init__(self, json_data):
-        self.inquiry_time = json_data['inquiry_time']
-        self._id = json_data['_id']
-        self.node = json_data['node']
-        self.gridA = json_data['gridA']
-        self.gridB = json_data['gridB']
-        self.time_window = json_data['time_window']
-        self.state = json_data['state']
-        self.next_node = json_data['next_node']
+    def __init__(self, t_list):
+        self.inquiry_time = current_milli_time()
+        self.task_id = t_list[0]
+        self.node = t_list[1]
+        self.gridA = t_list[2]
+        self.gridB = t_list[3]
+        self.time_window = t_list[4]
         
-        self.parsed_id = self._id[0:-6]
-        self.step = self._id[-6:-3]
-        self.steps = self._id[-3:]
-
+        pass
+    
     def get_tuple(self):
         pass
     
@@ -73,25 +68,9 @@ class Task(object):
     def get_stats(self):
         pass
         
-    def get_json(self):
-        d = {}
-        
-        d['inquiry_time'] = self.inquiry_time
-        d['_id'] = self._id
-        d['node'] = self.node
-        d['gridA'] = self.gridA
-        d['gridB'] = self.gridB
-        d['time_window'] = self.time_window
-        d['state'] = self.state
-        d['next_node'] = self.next_node
-        d['parsed_id'] = self.parsed_id
-        d['step'] = self.step
-        d['steps'] = self.steps
-        
-        return d
-
     def __repr__(self):
-        return "{:16.16}\t{}:{}\\{}\t{}".format(self._id, self.node, self.gridA, self.gridB, self.time_window)
+        return "{:16.16}\t{}:{}\\{}\t{}".format(self.task_id, self.node, self.gridA, self.gridB, self.time_window)
 
     def __str__(self):
-        return "{:16.16}\t{}:{}\\{}\t{}".format(self._id, self.node, self.gridA, self.gridB, self.time_window)
+        return "{:16.16}\t{}:{}\\{}\t{}".format(self.task_id, self.node, self.gridA, self.gridB, self.time_window)
+        

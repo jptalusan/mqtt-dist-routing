@@ -76,7 +76,8 @@ mqttc.connect()
 
 # Publishing messages, need to use mqttc.open() first??? I dont think so 
 mqttc.open()
-for count, t in enumerate(task_list):
+# for count, t in enumerate(task_list[0:1]):
+for count, t in enumerate(task_list[1:2]):
     payload = {}
     payload['time_sent'] = time_print(0)
     # payload['data'] = t.get_json()

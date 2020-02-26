@@ -12,8 +12,6 @@ ADD ./requirements.txt /usr/src/app/requirements.txt
 RUN apt-get update -y
 RUN apt-get install -qq -y python3-rtree
 
-RUN pip3 install -r requirements.txt
-
 WORKDIR /usr/src/app/osmnx
 RUN pip3 install .
 
@@ -21,5 +19,6 @@ WORKDIR /usr/src/app/networkx
 RUN pip3 install .
 
 WORKDIR /usr/src/app
+RUN pip3 install -r requirements.txt
 
 CMD [ "python3", "-u", "rsu.py" ]

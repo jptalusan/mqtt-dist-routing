@@ -9,7 +9,7 @@ import threading
 import time
 
 class Worker_Mqtt(MyMQTTClass):
-    def __init__(self, client_id=None, host="localhost", port=1883, keep_alive=60, clean_session=True, mongodb_c=None):
+    def __init__(self, client_id=None, host="localhost", port=1883, keep_alive=60, clean_session=True, mongodb_c=None, route_extractor=None):
         super().__init__(client_id, host, port, keep_alive, clean_session)
         # self._mqttc = mqtt.Client(client_id=client_id, clean_session=clean_session)
         print("init worker mqtt")
@@ -19,8 +19,10 @@ class Worker_Mqtt(MyMQTTClass):
         self._processed_tasks = []
         self.process_tasks()
 
-        # self._timer_task = threading.Thread(target=self.process_tasks, args = ())
-        # self._timer_task.start()
+        self._timer_task = threading.Thread(target=self.process_tasks, args = ())
+        self._timer_task.start()
+
+        self._route_extractor = route_extractor
 
     def mqtt_on_message(self, mqttc, obj, msg):
         # print("Worker receives:" + msg.topic+" "+str(msg.qos)+" "+str(msg.payload))
@@ -36,7 +38,7 @@ class Worker_Mqtt(MyMQTTClass):
                 # update mongodb entry as Responded (2)
             # print("worker received task from broker: {}".format(msg.payload))
             data = json.loads(msg.payload)
-
+            print("RSU receives: ", data)
             r = Route_Task(data)
             print("ID: ", r._id)
             if not self.task_exists(r._id):
@@ -67,9 +69,15 @@ class Worker_Mqtt(MyMQTTClass):
             try:
                 t = self._tasks.pop(0)
                 self._processed_tasks.append(t._id)
-                topic = utils.add_destination(GLOBAL_VARS.RESPONSE_TO_BROKER, self._client_id)
-                print("Sending {} to {}".format(t.__dict__, topic))
-                self.send(topic, json.dumps(t.__dict__))
-                return True
+
+                r = self._route_extractor.find_route(t.get_json())
+                if r:
+                    topic = utils.add_destination(GLOBAL_VARS.RESPONSE_TO_BROKER, self._client_id)
+                    print("Sending {} to {}".format(t.__dict__, topic))
+                    self.send(topic, json.dumps(t.__dict__))
+                    return True
+                else:
+                    print("error encountered.")
+                    # Probably should delete this task then and wait until i get a new one with new_node
             except IndexError as e:
                 print(e)

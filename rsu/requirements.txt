@@ -2,7 +2,6 @@ pymongo==3.9.0
 paho-mqtt==1.5.0
 
 # Worker general
-influxdb
 blosc
 numpy==1.18.1
 scipy
@@ -10,8 +9,6 @@ spectrum
 sklearn
 psutil
 joblib
-zmq
-tornado
 pandas==1.0.1
 
 # Routing
