@@ -103,28 +103,24 @@ class Route_Executor():
         return r
 
     def get_avg_speed_at_edge(self, start, end, attr, sensor_data=None, time_window=None):
+        tmc_id = None
+        length = None
+        time_traversed = 999
         if 0 not in attr:
             key = random.choice(list(attr))
             tmc_id = attr[key]['tmc_id']
             length = attr[key]['length']
         else:
-            tmc_id = None
-            length = None
             if 0 in attr:
                 if 'tmc_id' in attr[0]:
                     tmc_id = attr[0]['tmc_id']
                 if 'length' in attr[0]:
                     length = attr[0]['length']
-            if not length and not tmc_id:
-            # TODO: Another stop gap, penalized the error
-                return 999
         
-        if tmc_id in sensor_data:
+        if tmc_id and tmc_id in sensor_data:
             average_speed_at_time_window = sensor_data[tmc_id]['speeds'][time_window]
             time_traversed = length / average_speed_at_time_window
-            return time_traversed
-        # Default just so it runs! penalized the error
-        return 999
+        return time_traversed
 
     def random_speeds(self, start, end, attr, sensor_data=None, time_window=None):
         if 0 not in attr:
@@ -189,7 +185,7 @@ class Route_Executor():
         
     def get_shortest_route(self, sg, grid, node, time, bounds_list):
         # Assume that rsu_arr is present in the rsu
-        G = self.get_speeds_hash_for_grid(grid, with_neighbors = False)
+        G = self.get_speeds_hash_for_grid(grid, with_neighbors = True)
         fastest = math.inf
         route = None
         for b in bounds_list:
@@ -237,7 +233,7 @@ class Route_Executor():
                 print("Task C")
             
             # Assume that rsu_arr is present in the rsu
-            G = self.get_speeds_hash_for_grid(gridA, with_neighbors=False)
+            G = self.get_speeds_hash_for_grid(gridA, with_neighbors=True)
             
             fastest = math.inf
             route = None
@@ -262,7 +258,7 @@ class Route_Executor():
                 print("Task D")
 
             # Assume that rsu_arr is present in the rsu
-            G = self.get_speeds_hash_for_grid(gridB, with_neighbors=False)
+            G = self.get_speeds_hash_for_grid(gridB, with_neighbors=True)
             
             fastest = math.inf
             route = None
