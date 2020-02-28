@@ -39,8 +39,12 @@ class MyMongoDBClass():
         res = self._db["tasks"].find({'processed':None})
         return res
 
-    def update(self, collection, id, change_dict):
+    def update_one(self, collection, id, change_dict):
         res = self._db[collection].find_one_and_update({"_id": id}, {'$set': change_dict})
+        return res
+
+    def update_many(self, collection, query_dict, change_dict):
+        res = self._db[collection].update_many(query_dict, {'$set': change_dict})
         return res
 
     def delete_all(self, collection):

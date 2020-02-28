@@ -14,6 +14,14 @@ from common.src.mqtt_utils import MyMQTTClass
 from common.src.basic_utils import time_print
 from common.conf import GLOBAL_VARS
 
+def specify_task(task_list, parsed_id):
+    new_list = []
+    for t in task_list:
+        if t.parsed_id == parsed_id:
+            new_list.append(t)
+
+    return new_list
+
 start = time.time()
 
 if not os.path.exists(os.path.join(os.getcwd(), 'data')):
@@ -32,7 +40,7 @@ print(len(nx_g.nodes()))
 # https://github.com/gboeing/osmnx/issues/363
 # print(nx_g.nodes[0])
 
-number_of_queries = 5
+number_of_queries = 100
 clean_session = False
 
 file_path = os.path.join(data_dir, '{}-queries-for-{}-{}.pkl'.format(number_of_queries, x, y))
@@ -42,28 +50,31 @@ if not os.path.exists(file_path):
 
     a = generator.gen_SG(nx_g, Qdf)
     Qdf = Qdf.assign(og = a)
-    # print(Qdf.head())
+
+    # Converting row to a json
+
+    # print("\nConverting to JSON")
+    # for i in Qdf.index:
+    #     print(i)
+    #     print(Qdf.loc[i].to_json("row{}.json".format(i)))
+
+    # Converting a row to json and adding it into a column named "json"
+    # Qdf['json'] = Qdf.apply(lambda x: x.to_json(), axis=1)
+
+    task_list = generator.generate_tasks(Qdf)
+    [print(i, t.__dict__) for i, t in enumerate(task_list)]
+    # [print(i, t.__dict__['parsed_id']) for i, t in enumerate(task_list)]
 
     elapsed = time.time() - start
     print("Run time: {}".format(elapsed))
 
     file_path = os.path.join(data_dir, '{}-queries-for-{}-{}.pkl'.format(number_of_queries, x, y))
-    generator.save_query_dataframe(Qdf, file_path)
+    # generator.save_query_dataframe(Qdf, file_path)
+    pickle.dump(task_list, open(file_path,'wb'))
 else:
-    Qdf = pd.read_pickle(file_path)
-
-# Converting row to a json
-
-# print("\nConverting to JSON")
-# for i in Qdf.index:
-#     print(i)
-#     print(Qdf.loc[i].to_json("row{}.json".format(i)))
-
-# Converting a row to json and adding it into a column named "json"
-# Qdf['json'] = Qdf.apply(lambda x: x.to_json(), axis=1)
-
-task_list = generator.generate_tasks(Qdf)
-# [print(t.__dict__) for t in task_list]
+    # Qdf = pd.read_pickle(file_path)
+    task_list = pickle.load(open(file_path,'rb'))
+    # [print(i, t.__dict__) for i, t in enumerate(task_list)]
 
 # If you want to use a specific client id, use
 # mqttc = MyMQTTClass("client-id")
@@ -78,6 +89,9 @@ mqttc.connect()
 
 # Publishing messages, need to use mqttc.open() first??? I dont think so 
 mqttc.open()
+
+#5-9:11 error
+# task_list = specify_task(task_list, "b7c475b6")
 for count, t in enumerate(task_list):
 # for count, t in enumerate(task_list[0:1]):
 # for count, t in enumerate(task_list[1:2]):

@@ -26,7 +26,7 @@ from src.conf import LOCAL_RSU_VARS
 from src import adjustable_grids as ag
 import common.src.basic_utils as utils
 
-DEBUG = False
+DEBUG = True
 
 class Route_Executor():
     def __init__(self, x, y):
@@ -64,6 +64,11 @@ class Route_Executor():
                 r = ag.adjustable_RSU(gid, p, (i, j))
                 r.set_max_size(x, y)
                 self.rsu_arr.append(r)
+
+        file_path = os.path.join(data_dir, '{}-{}-G.pkl'.format(x, y))
+        with open(file_path, 'rb') as handle:
+            self.whole_graph = pickle.load(handle)
+        print("Whole graph: ", len(self.whole_graph.nodes))
         # Find what are the things needed to perform the route execution
 
     def find_route(self, task):
@@ -103,15 +108,23 @@ class Route_Executor():
             tmc_id = attr[key]['tmc_id']
             length = attr[key]['length']
         else:
-            tmc_id = attr[0]['tmc_id']
-            length = attr[0]['length']
+            tmc_id = None
+            length = None
+            if 0 in attr:
+                if 'tmc_id' in attr[0]:
+                    tmc_id = attr[0]['tmc_id']
+                if 'length' in attr[0]:
+                    length = attr[0]['length']
+            if not length and not tmc_id:
+            # TODO: Another stop gap, penalized the error
+                return 999
         
         if tmc_id in sensor_data:
             average_speed_at_time_window = sensor_data[tmc_id]['speeds'][time_window]
             time_traversed = length / average_speed_at_time_window
             return time_traversed
-        # Default just so it runs!
-        return 10
+        # Default just so it runs! penalized the error
+        return 999
 
     def random_speeds(self, start, end, attr, sensor_data=None, time_window=None):
         if 0 not in attr:
@@ -123,22 +136,23 @@ class Route_Executor():
         return average_speed_at_time_window
 
     def get_speeds_hash_for_grid(self, grid_id, with_neighbors=False):
+        # TODO: If the grid_id is not equal to this RSUs grid_id, then get historical data.
+        # Else get fresh data.
         #     print("get_speeds_hash_for_grid(grid_id={})".format(grid_id))
         G = {}
         file_path = os.path.join(self.avg_speeds_dir, '{}-avg_speeds.pkl'.format(grid_id))
         with open(file_path, 'rb') as handle:
             g = pickle.load(handle)
             G = {**G, **g}
+
+        # TODO: Get the old version of the data
         if with_neighbors and self.rsu_arr:
             r = ag.get_rsu_by_grid_id(self.rsu_arr, grid_id)
             d = r.get_neighbors(self.rsu_arr)
-            sg = self.sub_graph_dict[grid_id]
 
-            for k, n in d.items():
+            for _, n in d.items():
                 if n:
-                    grid_id = n.grid_id
-        #             print(grid_id)
-                    file_path = os.path.join(self.avg_speeds_dir, '{}-avg_speeds.pkl'.format(grid_id))
+                    file_path = os.path.join(self.avg_speeds_dir, '{}-avg_speeds.pkl'.format(n.grid_id))
                     with open(file_path, 'rb') as handle:
                         g = pickle.load(handle)
                         G = {**G, **g}
@@ -173,27 +187,25 @@ class Route_Executor():
     #     print(sg1, sg2)
         return possible_nodes
         
-    def get_shortest_route(self, sg, grid, node, bounds_list):
+    def get_shortest_route(self, sg, grid, node, time, bounds_list):
         # Assume that rsu_arr is present in the rsu
-        G = self.get_speeds_hash_for_grid(grid, with_neighbors=True)
+        G = self.get_speeds_hash_for_grid(grid, with_neighbors = False)
         fastest = math.inf
         route = None
         for b in bounds_list:
             try:
-                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node, b, self.get_avg_speed_at_edge, G, time_window=10)
+                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node, b, self.get_avg_speed_at_edge, G, time_window=time)
                 if total_time < fastest:
                     fastest = total_time
                     route = avg_speed_route
             except nx.NetworkXNoPath:
-    #             print("No path: {}-{}".format(node, b))
+                print("No path: {}-{}".format(node, b))
                 pass
             except nx.NodeNotFound as e:
                 utils.print_log("Error: {}".format(e))
-    #         print(total_time, route)
 
         if route == None:
             return None, None
-    #     print(total_time, route)
         return (total_time, route)
             
     # TODO: use table above
@@ -207,8 +219,7 @@ class Route_Executor():
             if DEBUG:
                 print("Task A")
             bounds = self.get_bounds_between_two_grids(gridA, gridB)
-            (total_time, route) = self.get_shortest_route(self.sub_graph_dict[gridA], gridA, node1, bounds)
-    #         print(total_time, route)
+            (total_time, route) = self.get_shortest_route(self.whole_graph, gridA, node1, time, bounds)
             return total_time, route
             
         elif node1 is None and (gridA is not None and isinstance(gridB, str)) and (gridB is not None and isinstance(gridB, str)):
@@ -216,8 +227,7 @@ class Route_Executor():
             if DEBUG:
                 print("Task B")
             bounds = self.get_bounds_between_two_grids(gridA, gridB)
-            (total_time, route) = self.get_shortest_route(self.sub_graph_dict[gridA], gridA, node2, bounds)
-    #         print(total_time, route)
+            (total_time, route) = self.get_shortest_route(self.whole_graph, gridA, node2, time, bounds)
             return total_time, route
         
         elif node1 is not None and gridA is not None and gridB is None:
@@ -227,23 +237,21 @@ class Route_Executor():
                 print("Task C")
             
             # Assume that rsu_arr is present in the rsu
-            G = self.get_speeds_hash_for_grid(gridA, with_neighbors=True)
+            G = self.get_speeds_hash_for_grid(gridA, with_neighbors=False)
             
             fastest = math.inf
             route = None
             try:
-                sg = self.sub_graph_dict[gridA]
-                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node2, node1, self.get_avg_speed_at_edge, G, time_window=10)
+                sg = self.whole_graph
+                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node2, node1, self.get_avg_speed_at_edge, G, time_window=time)
                 if total_time < fastest:
                     fastest = total_time
                     route = avg_speed_route
             except nx.NetworkXNoPath:
-    #             print("No path: {}-{}".format(node, b))
-                pass
+                print("No path: {}-{}".format(node2, node1))
             except nx.NodeNotFound as e:
                 utils.print_log("Error: {}".format(e))
-    #         print(total_time, route)
-    #         print(total_time, route)
+
             if route == None:
                 return None, None
             return total_time, route
@@ -259,17 +267,16 @@ class Route_Executor():
             fastest = math.inf
             route = None
             try:
-                sg = self.sub_graph_dict[gridB]
-                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node1, gridA, self.get_avg_speed_at_edge, G, time_window=10)
+                sg = self.whole_graph
+                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node1, gridA, self.get_avg_speed_at_edge, G, time_window=time)
+
                 if total_time < fastest:
                     fastest = total_time
                     route = avg_speed_route
             except nx.NetworkXNoPath:
-    #             print("No path: {}-{}".format(node, b))
-                pass
+                print("No path: {}-{}".format(node1, gridA))
             except nx.NodeNotFound as e:
                 utils.print_log("Error: {}".format(e))
-    #         print(total_time, route)
             if route == None:
                 return None, None
             return total_time, route

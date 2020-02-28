@@ -3,6 +3,7 @@ import time
 import random
 import string
 
+# int: time in milliseconds
 time_print = lambda type: datetime.now().strftime("%d/%m/%Y %H:%M:%S") if type == 'str' else int(round(time.time() * 1000))
 
 decode = lambda x: x.decode('utf-8')

@@ -85,7 +85,7 @@ def read_saved_sub_graphs(sub_graphs_dir):
     sub_graph_dict = {}
     for f in listdir(sub_graphs_dir):
         if isfile(join(sub_graphs_dir, f)):
-            if f == '.gitignore':
+            if f.startswith('.'):
                 continue
             grid_id = os.path.splitext(f)[0]
             grid_id = grid_id.split("-")[1]

@@ -42,18 +42,13 @@ class Broker_Mqtt(MyMQTTClass):
                 data = json.loads(utils.decode(msg.payload))
                 utils.print_log("worker-{} responded with :{}".format(rsu, data['_id']))
                 # self._mongodb_c.update("tasks", data['_id'], {"state": GLOBAL_VARS.TASK_STATES["RESPONDED"]})
-                self._mongodb_c.update("tasks", data['_id'], {"state": GLOBAL_VARS.TASK_STATES["RESPONDED"],
+                self._mongodb_c.update_one("tasks", data['_id'], {"state": GLOBAL_VARS.TASK_STATES["RESPONDED"],
                                                               "processed_time": utils.time_print(int),
                                                               "route": data['route'],
                                                               "next_node": data['route'][-1]})
                 utils.print_log("Updated: {}".format(data['_id']))
                 pass
         
-        if "error_response" in msg.topic:
-                data = json.loads(utils.decode(msg.payload))
-                self._mongodb_c.update("tasks", data['_id'], {"state": GLOBAL_VARS.TASK_STATES["ERROR"],
-                                                              "processed_time": utils.time_print(int)})
-
         if "middlleware" in t_arr and "processed" in t_arr:
             rsu = t_arr[-1]
             # Check if the name is RSU-XXXX
@@ -85,6 +80,11 @@ class Broker_Mqtt(MyMQTTClass):
         else:
             print("ID already exists")
 
+    # TODO: If a subtask in the middle of a task is ERROR:99, change all the tasks to ERROR as well.
+    # But if its the last of the subtask then its ok i guess.
+    def check_errors(self):
+        pass
+    
     # maybe better to keep sending tasks until there is a response.
     # maybe change to while loop
     # Some issue here of not getting anything looping when no message arrives.
@@ -96,6 +96,12 @@ class Broker_Mqtt(MyMQTTClass):
         while len(tasks) > 0:
             for task in tasks:
                 t_id = task['_id']
+
+                if utils.time_print(int) - task['inquiry_time'] >= GLOBAL_VARS.TIMEOUT:
+                    utils.print_log("{} has timedout".format(t_id))
+                    self._mongodb_c.update_one("tasks", t_id, {"state": GLOBAL_VARS.TASK_STATES["TIMEOUT"],
+                                                        "processed_time": utils.time_print(int)})
+                    continue
 
                 double_check = self._mongodb_c.find_one("tasks", query_dict = {'_id': t_id})
                 if double_check:
@@ -121,8 +127,7 @@ class Broker_Mqtt(MyMQTTClass):
                 payload = json.dumps(task)
 
                 # "middleware/rsu/+; wild card subscription
-                self._mongodb_c.update("tasks", t_id, {"state": GLOBAL_VARS.TASK_STATES["SENT"],
-                                                    "processed_time": utils.time_print(int)})
+                self._mongodb_c.update_one("tasks", t_id, {"state": GLOBAL_VARS.TASK_STATES["SENT"]})
                 self.send(topic, utils.encode(payload))
 
             tasks = list(self._mongodb_c.find("tasks", {"state": {"$lte": GLOBAL_VARS.TASK_STATES["PROCESSED"]}}))

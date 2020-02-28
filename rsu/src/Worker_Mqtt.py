@@ -31,6 +31,7 @@ class Worker_Mqtt(MyMQTTClass):
             self._timer_task = threading.Thread(target=self.process_tasks, args = ())
             self._timer_task.start()
 
+    # TODO: Add method here to determine if task should be allocated here or not.
     def parse_topic(self, msg):
         t_arr = msg.topic.split("/")
         print("RSU: {}".format(t_arr))
@@ -76,7 +77,7 @@ class Worker_Mqtt(MyMQTTClass):
                 t = self._tasks.pop(0)
                 t_dict = t.get_json()
                 route = self._route_extractor.find_route(t_dict)
-                if route[1]:
+                if all(route):
                     r = route[1]
                     r_int = [int(x) for x in r]
                     t_dict['route'] = r_int
@@ -88,15 +89,7 @@ class Worker_Mqtt(MyMQTTClass):
                     self.send(topic, json.dumps(t_dict))
                     return True
                 else:
-                    print("Error: error encountered.")
-                    # TODO: Send some info to broker that this route is dead.
-                    self.send(GLOBAL_VARS.ERROR_RESPONSE_TO_BROKER, json.dumps(t_dict))
-
-                    # try:
-                    #     self._processed_tasks.remove(t_dict['_id'])
-                    # except ValueError as e:
-                    #     print(e)
-                    # Probably should delete this task then and wait until i get a new one with new_node
+                    return False
             except IndexError as e:
                 print(e)
 
