@@ -19,3 +19,11 @@ TASK_STATES = {
 # Routes get lost because of the limitations in the available nodes
 # Some routes pass through boundaries that are at the corner of 4 grids/rsu
 TIMEOUT = 30000
+
+RSUS = {"0000": "SPBbQt", "0005": "SPBY71", "0010": "SPEPyO", "0015": "SPBPqg", "0020": "SPBarz", 
+        "0001": "SPBXhJ", "0006": "SPBZYd", "0011": "SPEPeO", "0016": "SPBb9J", "0021": "SPEO7z", 
+        "0002": "SPB_DO", "0007": "SPB_r0", "0012": "SPBaCP", "0017": "SPBZuN", "0022": "SPE_Pa", 
+        "0003": "SPEOdP", "0008": "SPBQ@b", "0013": "SPEP70", "0018": "SPBR6h", "0023": "SPBXxG", 
+        "0004": "SPBYyN", "0009": "SPEOOK", "0014": "SPEPOe", "0019": "SPE_6g", "0024": "SPEOxP"}
+
+RSU_ID = "RSU_ID"

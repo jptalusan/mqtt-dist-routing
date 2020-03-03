@@ -1,10 +1,10 @@
-from pymongo import MongoClient
 from pprint import pprint
+import pymongo
 
 class MyMongoDBClass():
     def __init__(self, host="localhost", port=27017, db="admin", collection="tasks"):
         print("MyMongoDBClass")
-        self._mongoc = MongoClient(host, port)
+        self._mongoc = pymongo.MongoClient(host, port)
 
         self._db = self._mongoc[db]
         # print(self._db)
@@ -24,7 +24,7 @@ class MyMongoDBClass():
 
     def find(self, collection, query_dict):
         # 5e4cd5d3a68938cdc24707d6
-        res = self._db[collection].find(query_dict)
+        res = self._db[collection].find(query_dict).sort([('inquiry_time', pymongo.ASCENDING)])
         # pprint("Found: {}".format(self._db[collection].count_documents(query_dict)))
         return res
 

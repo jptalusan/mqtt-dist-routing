@@ -43,7 +43,7 @@ class Route_Executor():
             os.mkdir(os.path.join(data_dir, 'avg_speeds'))
         self.avg_speeds_dir = os.path.join(data_dir, 'avg_speeds')
 
-        print(sub_graphs_dir)
+        # print(sub_graphs_dir)
         self.sub_graph_dict = ag.read_saved_sub_graphs(sub_graphs_dir)
         # print(self.sub_graph_dict)
 
@@ -52,8 +52,8 @@ class Route_Executor():
         polys = ag.divide_grid(target_area, (x, y))
 
         # some details
-        print("Total Target area: {} km2".format(ag.get_km2_area(target_area)))
-        print("Grids: {} km2".format(ag.get_km2_area(polys[0])))
+        # print("Total Target area: {} km2".format(ag.get_km2_area(target_area)))
+        # print("Grids: {} km2".format(ag.get_km2_area(polys[0])))
 
         self.rsu_arr = []
         for i in range(x):
@@ -68,7 +68,7 @@ class Route_Executor():
         file_path = os.path.join(data_dir, '{}-{}-G.pkl'.format(x, y))
         with open(file_path, 'rb') as handle:
             self.whole_graph = pickle.load(handle)
-        print("Whole graph: ", len(self.whole_graph.nodes))
+        # print("Whole graph: ", len(self.whole_graph.nodes))
         # Find what are the things needed to perform the route execution
 
     def find_route(self, task):

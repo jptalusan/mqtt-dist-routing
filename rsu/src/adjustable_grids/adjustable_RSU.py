@@ -5,110 +5,12 @@ from shapely.geometry import MultiPoint
 from shapely.geometry.polygon import Polygon
 from shapely.ops import nearest_points
 
-from sklearn.metrics import explained_variance_score
 import random
 import math
 import datetime
 import time
 import numpy as np
-'''
-Between Raspberry Pi nodes:
-100 packets transmitted, 100 received, 0% packet loss, time 1009ms
-rtt min/avg/max/mdev = 0.625/0.751/0.857/0.042 ms
-
-pi@pi3-08:~$ traceroute google.com
-traceroute to google.com (172.217.31.142), 30 hops max, 60 byte packets
- 1  fi-isa4.naist.jp (163.221.68.1)  1.441 ms  1.276 ms  1.190 ms
- 2  juniper-core1-v824.naist.jp (163.221.6.97)  0.502 ms  0.424 ms  0.347 ms
- 3  juniper-itc1-v830.naist.jp (163.221.6.122)  0.483 ms  0.406 ms  0.487 ms
- 4  wnoc-juniper5-v309.naist.jp (163.221.1.38)  0.408 ms  0.535 ms  0.458 ms
- 5  ve-7.juniper1.dojima.wide.ad.jp (203.178.136.170)  2.519 ms  2.445 ms  2.361 ms
- 6  ve-3761.juniper1.notemachi.wide.ad.jp (203.178.136.109)  8.970 ms  9.447 ms  9.352 ms
- 7  ve-51.nexus1.otemachi.wide.ad.jp (203.178.141.141)  8.338 ms  8.566 ms  8.515 ms
- 8  ve-5.alaxala1.otemachi.wide.ad.jp (203.178.140.194)  9.800 ms  12.800 ms  14.757 ms
- 9  as15169.dix-ie.jp (202.249.2.189)  8.516 ms  8.443 ms  8.370 ms
-10  108.170.242.161 (108.170.242.161)  8.612 ms  8.661 ms  8.523 ms
-11  74.125.251.235 (74.125.251.235)  9.626 ms 74.125.251.237 (74.125.251.237)  9.506 ms  9.426 ms
-12  nrt20s08-in-f14.1e100.net (172.217.31.142)  8.576 ms  8.459 ms  8.574 ms
-
-'''
-class simulator(object):
-    
-    hops_to_ms = 2.445 #ms
-    rsu_to_rsu = 11000 #KB/s 
-    
-    graph_data_df = None
-    speed_data_df = None
-    
-    def __init__(self):
-        pass
-    
-    # TODO: Stub because using real data takes too long, i will need to pickle it in the future.
-    def generate(self, x, dist):
-        manhattan_distance = dist
-        factor = 0.12 * manhattan_distance
-        loc = 1.1 + (factor)
-        ploc = random.uniform(-1 * manhattan_distance, manhattan_distance)
-        Y=np.random.normal(loc * x, factor)
-        return Y
-    
-    def get_manhattan_stub(self, r1, r2):
-        distance_between_pts = Point(a[1], a[0]).distance(Point(b[1], b[0]))
-        return round(distance_between_pts * 100)
-        
-    def get_data_accuracy_stub(self):
-        x = np.linspace(1, 100)
-        optimal_md = self.get_manhattan_stub(self.step_optimal_grid)
-        EVS = explained_variance_score(np.sin(x), self.generate(np.sin(x), optimal_md))
-        return EVS
-    
-    def get_processing_delay(self):
-        pass
-    
-    def get_communication_delay(self):
-        pass
-    
-    # Probably the actual location so can easily query when needed
-    def set_speed_data_dir(self, speeds_dir, ext):
-        nameList = os.listdir(graphs_dir)
-        extension = ext
-        names = []
-        sizes = []
-        data = {}
-        for n in nameList:
-            if extension in n:
-                path = os.path.join(sub_graphs_dir, n)
-                size = os.stat(path).st_size
-                names.append(n[5:-4])
-                sizes.append(size)
-
-        data['names'] = names
-        data['sizes'] = sizes
-
-        df = pd.DataFrame(data)
-        self.graph_data_df = df
-        pass
-    
-    def set_graph_data_dir(self, graphs_dir, ext):
-        nameList = os.listdir(graphs_dir)
-        extension = ext
-        names = []
-        sizes = []
-        data = {}
-        for n in nameList:
-            if extension in n:
-                path = os.path.join(sub_graphs_dir, n)
-                size = os.stat(path).st_size
-                names.append(n[5:-4])
-                sizes.append(size)
-
-        data['names'] = names
-        data['sizes'] = sizes
-
-        df = pd.DataFrame(data)
-        self.graph_data_df = df
-    
-    
+   
 class adjustable_RSU(object):
     
     # Class variables?

@@ -7,6 +7,10 @@ import pandas as pd
 from datetime import datetime
 import json
 import paho.mqtt.client as mqtt
+import pprint
+from multiprocessing import Pool
+import multiprocessing as multi
+import random
 
 sys.path.append('..')
 from common.src import header as generator
@@ -22,86 +26,88 @@ def specify_task(task_list, parsed_id):
 
     return new_list
 
-start = time.time()
+def get_tasks(x, y, queries):
+    start = time.time()
 
-if not os.path.exists(os.path.join(os.getcwd(), 'data')):
-    raise OSError("Must first download data, see README.md")
-data_dir = os.path.join(os.getcwd(), 'data')
+    if not os.path.exists(os.path.join(os.getcwd(), 'data')):
+        raise OSError("Must first download data, see README.md")
+    data_dir = os.path.join(os.getcwd(), 'data')
 
-x, y = 5, 5
+    file_path = os.path.join(data_dir, '{}-{}-G.pkl'.format(x, y))
+    with open(file_path, 'rb') as handle:
+        nx_g = pickle.load(handle)
 
-file_path = os.path.join(data_dir, '{}-{}-G.pkl'.format(x, y))
-print(file_path)
-with open(file_path, 'rb') as handle:
-    nx_g = pickle.load(handle)
-print(nx.__version__)
-print(len(nx_g.nodes()))
-
-# https://github.com/gboeing/osmnx/issues/363
-# print(nx_g.nodes[0])
-
-number_of_queries = 100
-clean_session = False
-
-file_path = os.path.join(data_dir, '{}-queries-for-{}-{}.pkl'.format(number_of_queries, x, y))
-if not os.path.exists(file_path):
-    Qdf = generator.generate_query(nx_g, number_of_queries)
-    # print(Qdf.head())
-
-    a = generator.gen_SG(nx_g, Qdf)
-    Qdf = Qdf.assign(og = a)
-
-    # Converting row to a json
-
-    # print("\nConverting to JSON")
-    # for i in Qdf.index:
-    #     print(i)
-    #     print(Qdf.loc[i].to_json("row{}.json".format(i)))
-
-    # Converting a row to json and adding it into a column named "json"
-    # Qdf['json'] = Qdf.apply(lambda x: x.to_json(), axis=1)
-
-    task_list = generator.generate_tasks(Qdf)
-    [print(i, t.__dict__) for i, t in enumerate(task_list)]
-    # [print(i, t.__dict__['parsed_id']) for i, t in enumerate(task_list)]
-
-    elapsed = time.time() - start
-    print("Run time: {}".format(elapsed))
+    number_of_queries = queries
 
     file_path = os.path.join(data_dir, '{}-queries-for-{}-{}.pkl'.format(number_of_queries, x, y))
-    # generator.save_query_dataframe(Qdf, file_path)
-    pickle.dump(task_list, open(file_path,'wb'))
-else:
-    # Qdf = pd.read_pickle(file_path)
-    task_list = pickle.load(open(file_path,'rb'))
-    # [print(i, t.__dict__) for i, t in enumerate(task_list)]
+    if not os.path.exists(file_path):
+        Qdf = generator.generate_query(nx_g, number_of_queries)
 
-# If you want to use a specific client id, use
-# mqttc = MyMQTTClass("client-id")
-# but note that the client id must be unique on the broker. Leaving the client
-# id parameter empty will generate a random id for you.
+        a = generator.gen_SG(nx_g, Qdf)
+        Qdf = Qdf.assign(og = a)
 
-mqttc = MyMQTTClass()
-mqttc.connect()
+        task_list = generator.generate_tasks(Qdf)
 
-# Subscribing to some topic in a separate thread
-# mqttc.start_sub_thread(["test/topic", "test/topic2"])
+        elapsed = time.time() - start
+        print("Run time: {}".format(elapsed))
 
-# Publishing messages, need to use mqttc.open() first??? I dont think so 
-mqttc.open()
+        file_path = os.path.join(data_dir, '{}-queries-for-{}-{}.pkl'.format(number_of_queries, x, y))
+        pickle.dump(task_list, open(file_path,'wb'))
+    else:
+        task_list = pickle.load(open(file_path,'rb'))
 
-#5-9:11 error
-# task_list = specify_task(task_list, "b7c475b6")
-for count, t in enumerate(task_list):
-# for count, t in enumerate(task_list[0:1]):
-# for count, t in enumerate(task_list[1:2]):
-    payload = {}
-    payload['time_sent'] = time_print(0)
-    # payload['data'] = t.get_json()
-    payload['data'] = t.__dict__
-    print(payload['data'])
-    data = json.dumps(payload)
-    mqttc.send(GLOBAL_VARS.QUERY_TO_BROKER, data)
-    time.sleep(0.02)
+    # This constant is true if Python was not started with an -O option
+    if __debug__:
+        [print(i, t.__dict__) for i, t in enumerate(task_list)]
 
-mqttc.close()
+    return task_list
+
+def send_tasks(i, ts):
+    print("Sending chunk: {} of size {}".format(i, len(ts)))
+    mqttc = MyMQTTClass()
+    mqttc.connect()
+    mqttc.open()
+
+    # task_list = specify_task(task_list, "b7c475b6")
+    for t in ts:
+    # for t in enumerate(task_list[0:1]):
+    # for t in enumerate(task_list[1:2]):
+        payload = {}
+        payload['time_sent'] = time_print(0)
+        # payload['data'] = t.get_json()
+        payload['data'] = t.__dict__
+        if __debug__:
+            print(payload['data'])
+        data = json.dumps(payload)
+        mqttc.send(GLOBAL_VARS.QUERY_TO_BROKER, data)
+        time.sleep(0.02)
+
+    mqttc.close()
+
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+# TODO: Add param for multiprocessing
+if __name__ == '__main__':
+    cores = multi.cpu_count()
+    pool = Pool(processes = cores)
+    print("Cores:", cores)
+
+    x, y = 5, 5
+    number_of_queries = 100
+
+    tasks = get_tasks(x, y, number_of_queries)
+    # send_tasks(0, tasks)
+
+    if number_of_queries > cores:
+        task_chunks = chunks(tasks, len(tasks)//cores)
+        for i, chunk in enumerate(task_chunks):
+            pool.apply_async(send_tasks, args=(i, chunk,))
+        pool.close()
+        pool.join()
+    else:
+        tasks = specify_task(tasks, "e3d58ea2")
+        send_tasks(0, tasks)
+

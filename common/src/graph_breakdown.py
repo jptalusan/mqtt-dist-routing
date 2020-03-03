@@ -11,14 +11,12 @@ import random
 import uuid
 import math
 import time
-import sklearn
 import datetime
 import sys
 
 from os import listdir
 from os.path import isfile, join
 from statistics import mean
-from sklearn.metrics import explained_variance_score
 
 import networkx as nx
 import osmnx as ox

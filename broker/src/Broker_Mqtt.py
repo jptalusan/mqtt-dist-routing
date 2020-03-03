@@ -5,6 +5,7 @@ import common.src.basic_utils as utils
 from common.src.mqtt_utils import MyMQTTClass
 from common.conf import GLOBAL_VARS
 from pprint import pprint
+import random
 
 class Broker_Mqtt(MyMQTTClass):
     def __init__(self, client_id=None, host="localhost", port=1883, keep_alive=60, clean_session=True, mongodb_c=None):
@@ -37,11 +38,12 @@ class Broker_Mqtt(MyMQTTClass):
             rsu = t_arr[-1]
             print("RSU:", rsu)
             # Check if the name is RSU-XXXX
-            if 'rsu' in rsu.lower():
+            # if DEBUG:
+            # if 'rsu' in rsu: 
+            if rsu in list(GLOBAL_VARS.RSUS.values()):
                 # update mongodb entry as Responded (2)
                 data = json.loads(utils.decode(msg.payload))
                 utils.print_log("worker-{} responded with :{}".format(rsu, data['_id']))
-                # self._mongodb_c.update("tasks", data['_id'], {"state": GLOBAL_VARS.TASK_STATES["RESPONDED"]})
                 self._mongodb_c.update_one("tasks", data['_id'], {"state": GLOBAL_VARS.TASK_STATES["RESPONDED"],
                                                               "processed_time": utils.time_print(int),
                                                               "route": data['route'],
@@ -76,9 +78,9 @@ class Broker_Mqtt(MyMQTTClass):
         found = _DB["tasks"].count_documents({"_id": t_id})
         if found == 0:
             t_id = self._mongodb_c.insert("tasks", data)
-            print("inserted: {}".format(t_id))
+            print("\tinserted: {}".format(t_id))
         else:
-            print("ID already exists")
+            print("\tID already exists")
 
     # TODO: If a subtask in the middle of a task is ERROR:99, change all the tasks to ERROR as well.
     # But if its the last of the subtask then its ok i guess.
@@ -90,15 +92,14 @@ class Broker_Mqtt(MyMQTTClass):
     # Some issue here of not getting anything looping when no message arrives.
     def get_unsent_tasks(self):
         print("get_unsent_tasks()")
-        # threading.Timer(5.0, get_unsent_tasks, args=(mqttc, mongodbc,)).start()
-        # tasks = list(self._mongodb_c.find("tasks", {"state": {"$lte": GLOBAL_VARS.TASK_STATES["SENT"]}}))
         tasks = list(self._mongodb_c.find("tasks", {"state": {"$lt": GLOBAL_VARS.TASK_STATES["PROCESSED"]}}))
+
         while len(tasks) > 0:
             for task in tasks:
                 t_id = task['_id']
 
                 if utils.time_print(int) - task['inquiry_time'] >= GLOBAL_VARS.TIMEOUT:
-                    utils.print_log("{} has timedout".format(t_id))
+                    utils.print_log("{} has timedout...".format(t_id))
                     self._mongodb_c.update_one("tasks", t_id, {"state": GLOBAL_VARS.TASK_STATES["TIMEOUT"],
                                                         "processed_time": utils.time_print(int)})
                     continue
@@ -123,7 +124,7 @@ class Broker_Mqtt(MyMQTTClass):
                     task['next_node'] = p_task['next_node']
 
                 topic = utils.add_destination(GLOBAL_VARS.BROKER_TO_RSU, rsu)
-                utils.print_log("Broker sending to topic: {}".format(topic))
+                utils.print_log("Broker sending task {} to topic: {}".format(t_id, topic))
                 payload = json.dumps(task)
 
                 # "middleware/rsu/+; wild card subscription
@@ -131,6 +132,7 @@ class Broker_Mqtt(MyMQTTClass):
                 self.send(topic, utils.encode(payload))
 
             tasks = list(self._mongodb_c.find("tasks", {"state": {"$lte": GLOBAL_VARS.TASK_STATES["PROCESSED"]}}))
+            # random.shuffle(tasks)
             # time.sleep(5)
 
     def get_next_node_for_unsent_tasks(self, parsed_id, step, steps):

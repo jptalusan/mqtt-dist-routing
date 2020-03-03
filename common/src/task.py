@@ -7,7 +7,6 @@ import random
 import geohash_hilbert as ghh
 import datetime
 import time
-from sklearn.metrics import explained_variance_score
 from shapely.geometry import Point
 
 from .utility import *
