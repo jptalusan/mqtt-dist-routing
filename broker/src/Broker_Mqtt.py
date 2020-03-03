@@ -90,6 +90,9 @@ class Broker_Mqtt(MyMQTTClass):
     # maybe better to keep sending tasks until there is a response.
     # maybe change to while loop
     # Some issue here of not getting anything looping when no message arrives.
+
+    # TODO: Check or create a new mqtt topic for replying to broker's inquiry of how "loaded" the RSUs are (task queue length) as well as checking distance between optimal
+    # What is the optimal grid? rsu below in line 120?
     def get_unsent_tasks(self):
         print("get_unsent_tasks()")
         tasks = list(self._mongodb_c.find("tasks", {"state": {"$lt": GLOBAL_VARS.TASK_STATES["PROCESSED"]}}))

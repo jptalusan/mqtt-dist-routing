@@ -115,7 +115,7 @@ class Worker_Mqtt(MyMQTTClass):
     Lower completion rate but this is the correct way i think?
     because it holds the task
     '''
-    def process_tasks(self):
+    def _process_tasks(self):
         print("process_tasks()")
         tasks = self.get_viable_tasks()
         while len(tasks) > 0:
@@ -148,12 +148,13 @@ class Worker_Mqtt(MyMQTTClass):
             # time.sleep(5)
 
     # This achieves higher success rate. Why?
-    def _process_tasks(self):
+    def process_tasks(self):
         print("Processing {} tasks remaining".format(len(self._tasks)))
         for t in self._tasks:
             utils.print_log("Task:{}".format(t._id))
-
+        # TODO: Sort the tasks at least?
         while len(self._tasks) > 0:
+            self._tasks = sorted(self._tasks, key=lambda k: int(k.step))
             t_dict = {}
             try:
                 t = self._tasks.pop(0)
