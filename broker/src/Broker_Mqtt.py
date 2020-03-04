@@ -1,6 +1,7 @@
 import json
 import threading
 import time
+import src.query_generator as generator
 import common.src.basic_utils as utils
 from common.src.mqtt_utils import MyMQTTClass
 from common.conf import GLOBAL_VARS
@@ -20,19 +21,33 @@ class Broker_Mqtt(MyMQTTClass):
         # print("Inheritance:" + msg.topic+" "+str(msg.qos)+" "+str(msg.payload))
         self.parse_topic(msg)
 
+    def start_unsent_tasks_thread(self):
+        if not self._timer_task.is_alive():
+            print("Started get_unsent_task thread.")
+            self._timer_task = threading.Thread(target=self.get_unsent_tasks, args = ())
+            self._timer_task.start()
+        else:
+            print("get_unsent_task thread already running.")
+
     def parse_topic(self, msg):
         t_arr = msg.topic.split("/")
         print(msg.topic)
+
+        if msg.topic == GLOBAL_VARS.SIMULATED_QUERY_TO_BROKER:
+            data = json.loads(utils.decode(msg.payload))
+            print("Broker receives : {}".format(data))
+
+            tasks = generator.get_tasks(self._mongodb_c, data['x'], data['y'], data['number_of_queries'], sorted=True)
+            # pprint(tasks)
+            self.generate_mongo_tasks_entry(tasks)
+
+            self.start_unsent_tasks_thread()
+
         if msg.topic == GLOBAL_VARS.QUERY_TO_BROKER:
                 print("Broker receives : {}".format(str(msg.payload)))
                 self.generate_mongo_payload(msg.payload)
 
-                if not self._timer_task.is_alive():
-                    print("Started get_unsent_task thread.")
-                    self._timer_task = threading.Thread(target=self.get_unsent_tasks, args = ())
-                    self._timer_task.start()
-                else:
-                    print("get_unsent_task thread already running.")
+                self.start_unsent_tasks_thread()
 
         if GLOBAL_VARS.RESPONSE_TO_BROKER in msg.topic:
             rsu = t_arr[-1]
@@ -59,6 +74,25 @@ class Broker_Mqtt(MyMQTTClass):
                 pass
 
         pass
+
+    def generate_mongo_tasks_entry(self, tasks):
+        for task in tasks:
+            data = task.get_json()
+            data['inquiry_time'] = utils.time_print(int)
+            data['processed_time'] = None
+            data['state'] = GLOBAL_VARS.TASK_STATES["UNSENT"]
+            data['next_node'] = None
+            data['route'] = None
+            t_id = data['_id']
+
+            print("Finding:", t_id)
+            _DB = self._mongodb_c.get_db("admin")
+            found = _DB["tasks"].count_documents({"_id": t_id})
+            if found == 0:
+                t_id = self._mongodb_c.insert("tasks", data)
+                print("\tinserted: {}".format(t_id))
+            else:
+                print("\tID already exists")
 
     # Unsent = 0, Sent = 1, Responded = 2, Task_done = 3
     def generate_mongo_payload(self, message):

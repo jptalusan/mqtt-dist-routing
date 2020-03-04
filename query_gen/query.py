@@ -42,7 +42,6 @@ def get_tasks(x, y, queries):
     file_path = os.path.join(data_dir, '{}-queries-for-{}-{}.pkl'.format(number_of_queries, x, y))
     if not os.path.exists(file_path):
         Qdf = generator.generate_query(nx_g, number_of_queries)
-
         a = generator.gen_SG(nx_g, Qdf)
         Qdf = Qdf.assign(og = a)
 
@@ -91,23 +90,35 @@ def chunks(lst, n):
 
 # TODO: Add param for multiprocessing
 if __name__ == '__main__':
-    cores = multi.cpu_count()
-    pool = Pool(processes = cores)
-    print("Cores:", cores)
+    # cores = multi.cpu_count()
+    # pool = Pool(processes = cores)
+    # print("Cores:", cores)
 
     x, y = 5, 5
     number_of_queries = 100
 
-    tasks = get_tasks(x, y, number_of_queries)
-    # send_tasks(0, tasks)
+    # tasks = get_tasks(x, y, number_of_queries)
+    # # send_tasks(0, tasks)
 
-    if number_of_queries > cores:
-        task_chunks = chunks(tasks, len(tasks)//cores)
-        for i, chunk in enumerate(task_chunks):
-            pool.apply_async(send_tasks, args=(i, chunk,))
-        pool.close()
-        pool.join()
-    else:
-        tasks = specify_task(tasks, "e3d58ea2")
-        send_tasks(0, tasks)
+    # if number_of_queries > cores:
+    #     task_chunks = chunks(tasks, len(tasks)//cores)
+    #     for i, chunk in enumerate(task_chunks):
+    #         pool.apply_async(send_tasks, args=(i, chunk,))
+    #     pool.close()
+    #     pool.join()
+    # else:
+    #     tasks = specify_task(tasks, "e3d58ea2")
+    #     send_tasks(0, tasks)
+    
+    mqttc = MyMQTTClass()
+    mqttc.connect()
+    mqttc.open()
+
+    payload = {'x': x, 'y': y, 'number_of_queries': number_of_queries}
+    print(payload)
+    
+    data = json.dumps(payload)
+    mqttc.send(GLOBAL_VARS.SIMULATED_QUERY_TO_BROKER, data)
+    mqttc.close()
+
 

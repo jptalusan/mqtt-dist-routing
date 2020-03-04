@@ -6,6 +6,7 @@ import copy
 from .task import Task
 import json
 from common.conf import GLOBAL_VARS
+
 # This is the entirety of query generation because the SG needs to be "pre-determined" before processing
 # (since we dont have any model that would tell us the next best grid right now)
 # Maybe creating a dataframe will be easier here.
@@ -17,6 +18,7 @@ from common.conf import GLOBAL_VARS
 *r: route
 '''
 def generate_query(G, no_of_queries):
+    print("generate_query()")
     Q = []
     routes = []
     for _ in range(no_of_queries):
@@ -27,18 +29,46 @@ def generate_query(G, no_of_queries):
                 continue
             try:
                 q = {}
+                q['t_id'] = get_trunc_task_id(uuid.uuid1())
                 q['s'] = orig_node
                 q['d'] = dest_node
                 time = random.randint(0, 23)
                 q['t'] = time
                 route = nx.shortest_path(G, orig_node, dest_node)
-                print('Path: {}:{}'.format(orig_node, dest_node))
+                if __debug__:
+                    print('Path: {}:{}'.format(orig_node, dest_node))
                 routes.append(route)
                 q['r'] = route
                 Q.append(q)
             except nx.NetworkXNoPath:
 #                 print('No path: {}:{}'.format(orig_node, dest_node))
                 pass
+    return pd.DataFrame(Q)
+
+def generate_single_query(G, s, d, t):
+    print("generate_query()")
+    Q = []
+    routes = []
+    orig_node = s
+    dest_node = d
+    if orig_node == dest_node:
+        print("Orig node and dest node should not be equal")
+        return None
+    try:
+        q = {}
+        q['t_id'] = get_trunc_task_id(uuid.uuid1())
+        q['s'] = orig_node
+        q['d'] = dest_node
+        q['t'] = t
+        route = nx.shortest_path(G, orig_node, dest_node)
+        if __debug__:
+            print('Path: {}:{}'.format(orig_node, dest_node))
+        routes.append(route)
+        q['r'] = route
+        Q.append(q)
+    except nx.NetworkXNoPath:
+#                 print('No path: {}:{}'.format(orig_node, dest_node))
+        pass
     return pd.DataFrame(Q)
 
 # Measure the number of routes that exist in only 1 grid maybe
@@ -79,7 +109,7 @@ def get_trunc_task_id(t_id):
 def generate_tasks(Qdf): 
     task_list = []
     for index, row in Qdf.iterrows():
-        t_id = uuid.uuid1()
+        t_id = row.t_id
         og = copy.copy(row['og'])
         s = row.s
         d = row.d
@@ -93,14 +123,14 @@ def generate_tasks(Qdf):
             og.append(None)
 
 #             # [t] * len(og) -> Assigns time variable to each pair
-            ids = ["{}{}{}".format(get_trunc_task_id(t_id), 
-                                    str(i).zfill(3), 
-                                    str(len(og) - 2).zfill(3)) for i in range(len(og) - 1)]
+            ids = ["{}{}{}".format(t_id, 
+                                   str(i).zfill(3), 
+                                   str(len(og) - 2).zfill(3)) for i in range(len(og) - 1)]
             pairs = zip(ids, nodes, og, og[1:], [t] * len(og))
         elif len(og) == 1:
-            id_ = "{}{}{}".format(get_trunc_task_id(t_id), 
-                                    str(0).zfill(3), 
-                                    str(0).zfill(3))
+            id_ = "{}{}{}".format(t_id, 
+                                  str(0).zfill(3), 
+                                  str(0).zfill(3))
             pairs = zip([id_], [s], [d], [og[0]], [t])
             pass
         

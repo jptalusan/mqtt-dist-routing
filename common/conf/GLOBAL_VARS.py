@@ -5,6 +5,7 @@ RESPONSE_TO_BROKER="middleware/broker/response"
 ERROR_RESPONSE_TO_BROKER="middleware/broker/response/error_response"
 SUB_RESPONSE_TO_BROKER="middleware/broker/response/+"
 PROCESSED_TO_BROKER="middleware/processed/+"
+SIMULATED_QUERY_TO_BROKER="middleware/broker/simulation_task"
 
 TASK_STATES = {
                 "ERROR": 99,
@@ -27,3 +28,7 @@ RSUS = {"0000": "SPBbQt", "0005": "SPBY71", "0010": "SPEPyO", "0015": "SPBPqg", 
         "0004": "SPBYyN", "0009": "SPEOOK", "0014": "SPEPOe", "0019": "SPE_6g", "0024": "SPEOxP"}
 
 RSU_ID = "RSU_ID"
+
+#MongoDB Collections
+TASKS = "tasks"
+QUERIES = "queries"

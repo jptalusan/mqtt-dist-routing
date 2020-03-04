@@ -1,5 +1,4 @@
 import networkx as nx
-import osmnx as ox
 import pickle
 import os
 from os import listdir
