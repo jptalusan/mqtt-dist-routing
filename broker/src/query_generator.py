@@ -30,7 +30,7 @@ def generate_task_from_sdt(s, d, t):
 
 def write_queries_to_mongodb(mongodb, query_df):
     print("write_queries_to_mongodb()")
-    print(query_df.head())
+    # print(query_df.head())
     # df = query_df[['t_id', 's', 'd', 't', 'r']].copy()
     query_df = query_df.rename(columns={"t_id": "_id", "r": "initial_route"})
     query_df['query_time'] = time_print(0)

@@ -26,3 +26,8 @@ def randomString(stringLength=10):
 def print_log(log, level=0, log_type="D"):
     d = datetime.datetime.utcnow().strftime("%d %b %Y %H:%M:%S.%f")[:-3]
     print("{}:{} {} # {}".format(level, log_type, d, log))
+
+def f7(seq):
+    seen = set()
+    seen_add = seen.add
+    return [x for x in seq if not (x in seen or seen_add(x))]

@@ -179,4 +179,4 @@ class Worker_Mqtt(MyMQTTClass):
             except IndexError as e:
                 print(e)
 
-            # time.sleep(2)
+            # time.sleep(5)
