@@ -16,9 +16,9 @@ if __name__ == "__main__":
         raise OSError("Must first download data, see README.md")
     data_dir = os.path.join(os.getcwd(), 'data')
 
-    if not os.path.exists(os.path.join(data_dir, 'logs_dir')):
-        os.mkdir(os.path.join(data_dir, 'logs_dir'))
-    logs_dir = os.path.join(data_dir, 'logs_dir')
+    if not os.path.exists(os.path.join(data_dir, 'logs')):
+        os.mkdir(os.path.join(data_dir, 'logs'))
+    logs_dir = os.path.join(data_dir, 'logs')
 
     if DEBUG:
         client_id = 'rsu-' + randomString()
