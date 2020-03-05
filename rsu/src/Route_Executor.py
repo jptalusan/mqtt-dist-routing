@@ -26,7 +26,7 @@ from src.conf import LOCAL_RSU_VARS
 from src import adjustable_grids as ag
 import common.src.basic_utils as utils
 
-DEBUG = True
+DEBUG = False
 
 class Route_Executor():
     def __init__(self, x, y):
@@ -72,7 +72,7 @@ class Route_Executor():
         # Find what are the things needed to perform the route execution
 
     def find_route(self, task):
-        print("Find_route of task: ", task)
+        print("Find_route of task: ", task['_id'])
         # Assuming first all tasks are assigned to one single RSU
         # Add checking for task Id so can reset the visualization
         # task_queue = task_list[8:14]
@@ -99,7 +99,7 @@ class Route_Executor():
             r = self.get_task_route(node1=n, gridA=gA, gridB=gB, node2=next_node, time=t)
             print("{}-node1: {}, gridA: {}, gridB: {}, node2: {}, time: {}".
                 format(task_count, n, gA, gB, next_node, t))
-        print(r)
+        # print(r)
         return r
 
     def get_avg_speed_at_edge(self, start, end, attr, sensor_data=None, time_window=None):

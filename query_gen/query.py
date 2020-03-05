@@ -90,13 +90,13 @@ def chunks(lst, n):
 
 # TODO: Add param for multiprocessing
 if __name__ == '__main__':
-    # cores = multi.cpu_count()
-    # pool = Pool(processes = cores)
-    # print("Cores:", cores)
-
     x, y = 5, 5
     number_of_queries = 100
 
+    # TODO: Fix this again
+    # cores = multi.cpu_count()
+    # pool = Pool(processes = cores)
+    # print("Cores:", cores)
     # tasks = get_tasks(x, y, number_of_queries)
     # # send_tasks(0, tasks)
 
@@ -107,7 +107,7 @@ if __name__ == '__main__':
     #     pool.close()
     #     pool.join()
     # else:
-    #     tasks = specify_task(tasks, "e3d58ea2")
+    #     # tasks = specify_task(tasks, "e3d58ea2")
     #     send_tasks(0, tasks)
     
     mqttc = MyMQTTClass()

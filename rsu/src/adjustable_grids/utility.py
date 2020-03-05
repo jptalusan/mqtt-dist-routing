@@ -1,19 +1,14 @@
 import networkx as nx
-import osmnx as ox
 import pickle
 import os
 from os import listdir
 from os.path import isfile, join
 from shapely.geometry import Point
 from src.adjustable_grids import graph_breakdown
-
-import pyproj    
+import pyproj
 from functools import partial
 from shapely.geometry import shape
 import shapely.ops as ops
-
-import matplotlib.pyplot as plt
-plt.style.use('seaborn-whitegrid')
 
 def generate_save_sub_graph(G, node_list, directory, filename=None):
     print("generate_save_sub_graph:", filename)

@@ -15,6 +15,7 @@ class Broker_Mqtt(MyMQTTClass):
         print("init broker mqtt")
         self._mongodb_c = mongodb_c
 
+        self._tasks = []
         self._timer_task = threading.Thread(target=self.get_unsent_tasks, args = ())
         self._timer_task.start()
         
@@ -44,6 +45,7 @@ class Broker_Mqtt(MyMQTTClass):
             tasks = generator.get_tasks(self._mongodb_c, data['x'], data['y'], data['number_of_queries'], sorted=True)
             # pprint(tasks)
             self.generate_mongo_tasks_entry(tasks)
+            self._tasks = tasks
             self.start_unsent_tasks_thread()
 
         if msg.topic == GLOBAL_VARS.QUERY_TO_BROKER:
@@ -70,7 +72,8 @@ class Broker_Mqtt(MyMQTTClass):
                                                               "route": route,
                                                               "next_node": route[-1]})
                 utils.print_log("Updated: {}".format(data['_id']))
-
+                self.remove_task(data['_id'])
+                # self.start_unsent_tasks_thread()
                 pass
         
         if "middlleware" in t_arr and "processed" in t_arr:
@@ -131,6 +134,17 @@ class Broker_Mqtt(MyMQTTClass):
     # But if its the last of the subtask then its ok i guess.
     def check_errors(self):
         pass
+
+    def remove_task(self, id):
+        # print("remove_task({})".format(id))
+        # print("Tasks:", self._tasks)
+
+        for i, task in enumerate(self._tasks):
+            if task._id == id:
+                del self._tasks[i]
+                print("removed ({})".format(id))
+                break
+        # print("Tasks:", self._tasks)
     
     # maybe better to keep sending tasks until there is a response.
     # maybe change to while loop
@@ -140,18 +154,20 @@ class Broker_Mqtt(MyMQTTClass):
     # What is the optimal grid? rsu below in line 120?
     def get_unsent_tasks(self):
         print("get_unsent_tasks()")
-        tasks = list(self._mongodb_c.find("tasks", {"state": {"$lt": GLOBAL_VARS.TASK_STATES["PROCESSED"]}}))
+        # [utils.print_log(task._id) for task in self._tasks]
+        mongo_tasks = list(self._mongodb_c.find("tasks", {"state": {"$lt": GLOBAL_VARS.TASK_STATES["PROCESSED"]}}))
+        
+        # while len(tasks) > 0:
+        while len(self._tasks) > 0 or len(mongo_tasks) > 0:
+            for task in self._tasks:
+                t_id = task._id
+                parsed_id = task.parsed_id
 
-        while len(tasks) > 0:
-            for task in tasks:
-                t_id = task['_id']
-                parsed_id = task['parsed_id']
-
-                if utils.time_print(int) - task['inquiry_time'] >= GLOBAL_VARS.TIMEOUT:
+                if utils.time_print(int) - task.inquiry_time >= GLOBAL_VARS.TIMEOUT:
                     utils.print_log("{} has timedout...".format(t_id))
                     self._mongodb_c._db.tasks.update_many({"parsed_id": parsed_id}, {'$set': {'state': GLOBAL_VARS.TASK_STATES['TIMEOUT']}})
                     self._mongodb_c._db.queries.update_one({"_id": parsed_id}, {'$set': {'final_route': "ERROR", 'total_travel_time': "ERROR"}})
-
+                    self.remove_task(t_id)
                     continue
 
                 double_check = self._mongodb_c.find_one("tasks", query_dict = {'_id': t_id})
@@ -160,30 +176,30 @@ class Broker_Mqtt(MyMQTTClass):
                         utils.print_log("{} already sent...".format(t_id))
                         continue
                     
-                gridA = task['gridA']
-                gridB = task['gridB']
+                gridA = task.gridA
+                gridB = task.gridB
 
                 if isinstance(gridA, int):
                     rsu = gridB
                 else:
                     rsu = gridA
 
-                p_task = self.get_next_node_for_unsent_tasks(task['parsed_id'], task['step'], task['steps'])
+                p_task = self.get_next_node_for_unsent_tasks(task.parsed_id, task.step, task.steps)
                 if p_task:
                     utils.print_log("Got next_node:{}".format(p_task['next_node']))
-                    task['next_node'] = p_task['next_node']
+                    task.next_node = p_task['next_node']
 
                 topic = utils.add_destination(GLOBAL_VARS.BROKER_TO_RSU, rsu)
-                utils.print_log("Broker sending task {} to topic: {}".format(t_id, topic))
-                payload = json.dumps(task)
+                utils.print_log("Broker sending task {} to topic: rsu-{}".format(t_id, utils.get_worker_from_topic(topic)))
+                payload = json.dumps(task.get_json())
 
                 # "middleware/rsu/+; wild card subscription
                 self._mongodb_c.update_one("tasks", t_id, {"state": GLOBAL_VARS.TASK_STATES["SENT"]})
                 self.send(topic, utils.encode(payload))
 
-            tasks = list(self._mongodb_c.find("tasks", {"state": {"$lte": GLOBAL_VARS.TASK_STATES["PROCESSED"]}}))
+            mongo_tasks = list(self._mongodb_c.find("tasks", {"state": {"$lte": GLOBAL_VARS.TASK_STATES["PROCESSED"]}}))
             # random.shuffle(tasks)
-            # time.sleep(5)
+            # time.sleep(0.2)
 
     def get_next_node_for_unsent_tasks(self, parsed_id, step, steps):
         utils.print_log("get_next_node_for_unsent_tasks({}, {}, {})".format(parsed_id, step, steps))
@@ -198,14 +214,6 @@ class Broker_Mqtt(MyMQTTClass):
             # utils.print_log(prior_step)
             return prior_step
 
-    def start_collect_tasks_thread(self):
-        if not self._collect_tasks.is_alive():
-            print("Started compile_tasks_by_id thread.")
-            self._collect_tasks = threading.Thread(target=self.compile_tasks_by_id, args = ())
-            self._collect_tasks.start()
-        else:
-            print("compile_tasks_by_id thread already running.")
-
     # TODO: Add a timeout for queries too, trigger this thread when a message arrives, if count == 0, just die.
     '''
     Just run in a loop until all that exists is state:4, 98 or 99
@@ -219,7 +227,7 @@ class Broker_Mqtt(MyMQTTClass):
             res = self._mongodb_c._db.queries.find({"final_route": None})
             for r in res:
                 parsed_id = r['_id']
-                utils.print_log(parsed_id)
+                # utils.print_log(parsed_id)
                 count = self._mongodb_c._db.tasks.count_documents({"parsed_id": parsed_id, "state": 3})
                 temps = self._mongodb_c._db.tasks.find_one({"parsed_id": parsed_id, "state": 3})
                 if not temps:
@@ -242,3 +250,4 @@ class Broker_Mqtt(MyMQTTClass):
                                                                     'total_travel_time': total_travel_time}})
 
                     self._mongodb_c._db.tasks.update_many({"parsed_id": parsed_id, "state": 3}, {'$set': {'state': GLOBAL_VARS.TASK_STATES['COLLECTED']}})
+            # time.sleep(10)

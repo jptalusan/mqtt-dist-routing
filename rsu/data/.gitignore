@@ -1,5 +1,7 @@
 *
 */
+!logs/
 !speeds/
+!avg_speeds/
 !sub_graphs/
 !.gitignore

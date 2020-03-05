@@ -18,9 +18,6 @@ from os import listdir
 from os.path import isfile, join
 from statistics import mean
 import networkx as nx
-import osmnx as ox
-
-import geohash_hilbert as ghh
 
 from shapely.geometry import Polygon
 from shapely.geometry import LineString

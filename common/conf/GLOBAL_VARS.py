@@ -27,6 +27,12 @@ RSUS = {"0000": "SPBbQt", "0005": "SPBY71", "0010": "SPEPyO", "0015": "SPBPqg", 
         "0003": "SPEOdP", "0008": "SPBQ@b", "0013": "SPEP70", "0018": "SPBR6h", "0023": "SPBXxG", 
         "0004": "SPBYyN", "0009": "SPEOOK", "0014": "SPEPOe", "0019": "SPE_6g", "0024": "SPEOxP"}
 
+WORKER = {"SPBbQt": "0000", "SPBY71": "0005", "SPEPyO": "0010", "SPBPqg": "0015", "SPBarz": "0020", 
+          "SPBXhJ": "0001", "SPBZYd": "0006", "SPEPeO": "0011", "SPBb9J": "0016", "SPEO7z": "0021", 
+          "SPB_DO": "0002", "SPB_r0": "0007", "SPBaCP": "0012", "SPBZuN": "0017", "SPE_Pa": "0022", 
+          "SPEOdP": "0003", "SPBQ@b": "0008", "SPEP70": "0013", "SPBR6h": "0018", "SPBXxG": "0023", 
+          "SPBYyN": "0004", "SPEOOK": "0009", "SPEPOe": "0014", "SPE_6g": "0019", "SPEOxP": "0024"}
+
 RSU_ID = "RSU_ID"
 
 #MongoDB Collections
