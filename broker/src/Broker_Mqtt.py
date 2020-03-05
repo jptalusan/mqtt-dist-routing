@@ -7,6 +7,7 @@ from common.src.mqtt_utils import MyMQTTClass
 from common.conf import GLOBAL_VARS
 from pprint import pprint
 import random
+from multiprocessing import Pool
 
 class Broker_Mqtt(MyMQTTClass):
     def __init__(self, client_id=None, host="localhost", port=1883, keep_alive=60, clean_session=True, mongodb_c=None):
@@ -16,7 +17,7 @@ class Broker_Mqtt(MyMQTTClass):
 
         self._timer_task = threading.Thread(target=self.get_unsent_tasks, args = ())
         self._timer_task.start()
-
+        
         self._collect_tasks = threading.Thread(target=self.compile_tasks_by_id, args = ())
         self._collect_tasks.start()
 
@@ -61,9 +62,11 @@ class Broker_Mqtt(MyMQTTClass):
                 data = json.loads(utils.decode(msg.payload))
 
                 route = data['route']
+                travel_time = data['travel_time']
                 utils.print_log("worker-{} responded with :{}".format(rsu, data['_id']))
                 self._mongodb_c.update_one("tasks", data['_id'], {"state": GLOBAL_VARS.TASK_STATES["RESPONDED"],
                                                               "processed_time": utils.time_print(int),
+                                                              "travel_time": travel_time,
                                                               "route": route,
                                                               "next_node": route[-1]})
                 utils.print_log("Updated: {}".format(data['_id']))
@@ -99,6 +102,7 @@ class Broker_Mqtt(MyMQTTClass):
                 # print("\tID already exists")
                 pass
 
+    # Place for adding new mongodb columns.
     # Unsent = 0, Sent = 1, Responded = 2, Task_done = 3
     def generate_mongo_payload(self, message):
         print("generate_mongo_payload:", len(message))
@@ -110,6 +114,7 @@ class Broker_Mqtt(MyMQTTClass):
         data['state'] = GLOBAL_VARS.TASK_STATES["UNSENT"]
         data['next_node'] = None
         data['route'] = None
+        data['travel_time'] = None
         t_id = data['_id']
 
         # print("Finding:", t_id)
@@ -145,8 +150,7 @@ class Broker_Mqtt(MyMQTTClass):
                 if utils.time_print(int) - task['inquiry_time'] >= GLOBAL_VARS.TIMEOUT:
                     utils.print_log("{} has timedout...".format(t_id))
                     self._mongodb_c._db.tasks.update_many({"parsed_id": parsed_id}, {'$set': {'state': GLOBAL_VARS.TASK_STATES['TIMEOUT']}})
-                    self._mongodb_c._db.queries.update_one({"_id": parsed_id}, {'$set': {'final_route': "ERROR"}})
-                    self.start_collect_tasks_thread()
+                    self._mongodb_c._db.queries.update_one({"_id": parsed_id}, {'$set': {'final_route': "ERROR", 'total_travel_time': "ERROR"}})
 
                     continue
 
@@ -183,9 +187,7 @@ class Broker_Mqtt(MyMQTTClass):
 
     def get_next_node_for_unsent_tasks(self, parsed_id, step, steps):
         utils.print_log("get_next_node_for_unsent_tasks({}, {}, {})".format(parsed_id, step, steps))
-
         i_step = int(step)
-        
         if i_step == 0:
             return None
         p_step = str(i_step - 1).zfill(3)
@@ -209,35 +211,34 @@ class Broker_Mqtt(MyMQTTClass):
     Just run in a loop until all that exists is state:4, 98 or 99
     '''
     def compile_tasks_by_id(self):
-        # while True:
-            # time.sleep(5)
-        count = self._mongodb_c._db.queries.count_documents({"final_route": None})
-        if count == 0:
-            return False
-            # continue
-        res = self._mongodb_c._db.queries.find({"final_route": None})
-        for r in res:
-            parsed_id = r['_id']
-            utils.print_log(parsed_id)
-            count = self._mongodb_c._db.tasks.count_documents({"parsed_id": parsed_id, "state": 3})
-            temps = self._mongodb_c._db.tasks.find_one({"parsed_id": parsed_id, "state": 3})
-            if not temps:
-                # continue
-                return False
+        while True:
+            count = self._mongodb_c._db.queries.count_documents({"final_route": None})
+            if count == 0:
+                continue
 
-            task_steps = int(temps['steps']) + 1
-            if task_steps == count:
-                tasks = self._mongodb_c._db.tasks.find({"parsed_id": parsed_id, "state": 3})
-                route = []
-                for task in tasks:
-                    print("{}/{}".format(task['step'], task['steps']))
-                    route.extend(task['route'])
-                    last_processing_time = task['processed_time']
+            res = self._mongodb_c._db.queries.find({"final_route": None})
+            for r in res:
+                parsed_id = r['_id']
+                utils.print_log(parsed_id)
+                count = self._mongodb_c._db.tasks.count_documents({"parsed_id": parsed_id, "state": 3})
+                temps = self._mongodb_c._db.tasks.find_one({"parsed_id": parsed_id, "state": 3})
+                if not temps:
+                    continue
 
-                self._mongodb_c._db.queries.update_one({'_id': parsed_id}, 
-                                                        {'$set': {'final_route': utils.f7(route), 
-                                                                    'total_processed_time':last_processing_time}})
+                task_steps = int(temps['steps']) + 1
+                if task_steps == count:
+                    tasks = self._mongodb_c._db.tasks.find({"parsed_id": parsed_id, "state": 3})
+                    route = []
+                    total_travel_time = 0
+                    for task in tasks:
+                        print("{}/{}".format(task['step'], task['steps']))
+                        route.extend(task['route'])
+                        last_processing_time = task['processed_time']
+                        total_travel_time = total_travel_time + task['travel_time']
 
-                self._mongodb_c._db.tasks.update_many({"parsed_id": parsed_id, "state": 3}, {'$set': {'state': GLOBAL_VARS.TASK_STATES['COLLECTED']}})
-        
-        return True
+                    self._mongodb_c._db.queries.update_one({'_id': parsed_id}, 
+                                                            {'$set': {'final_route': utils.f7(route), 
+                                                                    'total_processed_time':last_processing_time,
+                                                                    'total_travel_time': total_travel_time}})
+
+                    self._mongodb_c._db.tasks.update_many({"parsed_id": parsed_id, "state": 3}, {'$set': {'state': GLOBAL_VARS.TASK_STATES['COLLECTED']}})

@@ -167,6 +167,7 @@ class Worker_Mqtt(MyMQTTClass):
                     r = route[1]
                     r_int = [int(x) for x in r]
                     t_dict['route'] = r_int
+                    t_dict['travel_time'] = route[0]
                     topic = utils.add_destination(GLOBAL_VARS.RESPONSE_TO_BROKER, self._client_id)
                     utils.print_log("Sending {} to {}".format(t_dict['_id'], topic))
                     utils.print_log("Removing {} from task queue and appending to processed_tasks".format(t_dict['_id']))

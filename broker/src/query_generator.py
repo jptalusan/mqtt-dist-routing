@@ -36,6 +36,7 @@ def write_queries_to_mongodb(mongodb, query_df):
     query_df['query_time'] = time_print(0)
     query_df['total_processed_time'] = None
     query_df['final_route'] = None
+    query_df['total_travel_time'] = None
     # query_df['json'] = query_df.apply(lambda x: x.to_json(), axis=1)
     # print(new_df)
 
