@@ -379,6 +379,7 @@ def create_new_edges(G, new_edges):
             for node in node_list:
                 np = node_to_point(G, node)
                 distances.append(s_p.distance(np))
+
             # TODO: ZeroDivisionError: float division by zero
             # Encountered when i rerun on the new network graph
             distances = [n / distances[-1] for n in distances]

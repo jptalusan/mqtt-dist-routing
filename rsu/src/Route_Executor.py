@@ -203,8 +203,7 @@ class Route_Executor():
         if route == None:
             return None, None
         return (total_time, route)
-            
-    # TODO: use table above
+
     # Node 2 is the node from the previous hop/route
     def get_task_route(self, node1, gridA, gridB, time, node2=None):
         if (node1 is None) and ((gridA is None) or (gridB is None)):

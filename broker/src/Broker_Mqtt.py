@@ -146,8 +146,8 @@ class Broker_Mqtt(MyMQTTClass):
                     utils.print_log("{} has timedout...".format(t_id))
                     self._mongodb_c._db.tasks.update_many({"parsed_id": parsed_id}, {'$set': {'state': GLOBAL_VARS.TASK_STATES['TIMEOUT']}})
                     self._mongodb_c._db.queries.update_one({"_id": parsed_id}, {'$set': {'final_route': "ERROR"}})
-                    # self._mongodb_c.update_one("queries", parsed_id, {"state": GLOBAL_VARS.TASK_STATES["TIMEOUT"],
-                    #                                     "processed_time": utils.time_print(int)})
+                    self.start_collect_tasks_thread()
+
                     continue
 
                 double_check = self._mongodb_c.find_one("tasks", query_dict = {'_id': t_id})
@@ -209,31 +209,35 @@ class Broker_Mqtt(MyMQTTClass):
     Just run in a loop until all that exists is state:4, 98 or 99
     '''
     def compile_tasks_by_id(self):
-        while True:
-            time.sleep(5)
-            count = self._mongodb_c._db.queries.count_documents({"final_route": None})
-            if count == 0:
-                continue
-            res = self._mongodb_c._db.queries.find({"final_route": None})
-            for r in res:
-                parsed_id = r['_id']
-                utils.print_log(parsed_id)
-                count = self._mongodb_c._db.tasks.count_documents({"parsed_id": parsed_id, "state": 3})
-                temps = self._mongodb_c._db.tasks.find_one({"parsed_id": parsed_id, "state": 3})
-                if not temps:
-                    continue
+        # while True:
+            # time.sleep(5)
+        count = self._mongodb_c._db.queries.count_documents({"final_route": None})
+        if count == 0:
+            return False
+            # continue
+        res = self._mongodb_c._db.queries.find({"final_route": None})
+        for r in res:
+            parsed_id = r['_id']
+            utils.print_log(parsed_id)
+            count = self._mongodb_c._db.tasks.count_documents({"parsed_id": parsed_id, "state": 3})
+            temps = self._mongodb_c._db.tasks.find_one({"parsed_id": parsed_id, "state": 3})
+            if not temps:
+                # continue
+                return False
 
-                task_steps = int(temps['steps']) + 1
-                if task_steps == count:
-                    tasks = self._mongodb_c._db.tasks.find({"parsed_id": parsed_id, "state": 3})
-                    route = []
-                    for task in tasks:
-                        print("{}/{}".format(task['step'], task['steps']))
-                        route.extend(task['route'])
-                        last_processing_time = task['processed_time']
+            task_steps = int(temps['steps']) + 1
+            if task_steps == count:
+                tasks = self._mongodb_c._db.tasks.find({"parsed_id": parsed_id, "state": 3})
+                route = []
+                for task in tasks:
+                    print("{}/{}".format(task['step'], task['steps']))
+                    route.extend(task['route'])
+                    last_processing_time = task['processed_time']
 
-                    self._mongodb_c._db.queries.update_one({'_id': parsed_id}, 
-                                                           {'$set': {'final_route': utils.f7(route), 
-                                                                     'total_processed_time':last_processing_time}})
+                self._mongodb_c._db.queries.update_one({'_id': parsed_id}, 
+                                                        {'$set': {'final_route': utils.f7(route), 
+                                                                    'total_processed_time':last_processing_time}})
 
-                    self._mongodb_c._db.tasks.update_many({"parsed_id": parsed_id, "state": 3}, {'$set': {'state': GLOBAL_VARS.TASK_STATES['COLLECTED']}})
+                self._mongodb_c._db.tasks.update_many({"parsed_id": parsed_id, "state": 3}, {'$set': {'state': GLOBAL_VARS.TASK_STATES['COLLECTED']}})
+        
+        return True

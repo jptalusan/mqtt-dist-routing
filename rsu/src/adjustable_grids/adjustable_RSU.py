@@ -48,7 +48,6 @@ class adjustable_RSU(object):
             self.dataset = dataset
             
     def add_task(self, task, force=False, constraint='delay'):
-        # TODO: Use the simulator class to answer these values.
         task_px = task.calculate_total_px_time()
         
         # Affected by change in actual grid
