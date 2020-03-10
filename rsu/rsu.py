@@ -40,5 +40,7 @@ if __name__ == "__main__":
             pass
         mqttc = Worker_Mqtt(host="mqtt", client_id=client_id, route_extractor=r_ex, log_file=log_file)
         mqttc.connect()
-        mqttc.start_sub_thread(["test/topic", 
-                                "middleware/rsu/{}".format(GRID_ID)])
+        mqttc.start_sub_thread([GLOBAL_VARS.START_LOGGING,
+                                GLOBAL_VARS.STOP_LOGGING,
+                                GLOBAL_VARS.ALLOCATION_STATUS_TO_RSU, 
+                                "{}{}".format(GLOBAL_VARS.BROKER_TO_RSU, GRID_ID)])

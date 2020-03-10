@@ -11,7 +11,6 @@ import time
 class Worker_Mqtt(MyMQTTClass):
     def __init__(self, client_id=None, host="localhost", port=1883, keep_alive=60, clean_session=True, mongodb_c=None, route_extractor=None, log_file=None):
         super().__init__(client_id, host, port, keep_alive, clean_session)
-        # self._mqttc = mqtt.Client(client_id=client_id, clean_session=clean_session)
         print("init worker mqtt")
         self._mongodb_c = mongodb_c
         self._client_id = client_id
@@ -19,21 +18,27 @@ class Worker_Mqtt(MyMQTTClass):
         self._tasks = []
         self._processed_tasks = []
         self._route_extractor = route_extractor
+        self._current_processing = ""
+        self._LOG_FLAG = True
 
         self._timer_task = threading.Thread(target=self.process_tasks, args = ())
         self._timer_task.start()
 
     def mqtt_on_message(self, mqttc, obj, msg):
-        # print("Worker receives:" + msg.topic+" "+str(msg.qos)+" "+str(msg.payload))
         self.parse_topic(msg)
-        # if not self._timer_task.is_alive():
-        #     self._timer_task = threading.Thread(target=self.process_tasks, args = ())
-        #     self._timer_task.start()
 
     # TODO: Add method here to determine if task should be allocated here or not.
     def parse_topic(self, msg):
         t_arr = msg.topic.split("/")
         print("RSU: {}".format(t_arr))
+
+        # For logging only
+        if msg.topic == GLOBAL_VARS.START_LOGGING:
+            self._logging_task = threading.Thread(target=self.logging_task, args = ())
+            self._logging_task.start()
+        if msg.topic == GLOBAL_VARS.STOP_LOGGING:
+            self._LOG_FLAG = False
+
         if "middleware" in t_arr and "rsu" in t_arr:
             rsu = t_arr[-1]
             # If task is meant for this rsu
@@ -90,80 +95,20 @@ class Worker_Mqtt(MyMQTTClass):
                 del self._tasks[i]
                 break
         print("Tasks:", self._tasks)
-    # Task priority:If no viable tasks, then the process can sleep/wait
-    '''
-        1. Tasks with step == 000
-        2. Tasks with next_node not None
-        3. Everything else (should not be processed, just sorted)
-    '''
-    # def get_viable_tasks(self):
-    #     print("get_viable_tasks()")
-    #     step_zeros = []
-    #     next_nodes = []
 
-    #     step_zeros = [t for t in self._tasks if t.step == '000']
-    #     next_nodes = [t for t in self._tasks if t.next_node is not None and t.step != '000']
-    #     # left_nodes = [t for t in self._tasks if t.next_node is None and t.step != '000']
-        
-    #     print("step_zeros:", step_zeros)
-    #     [pprint(s.__dict__) for s in step_zeros]
-    #     print("next_nodes:")
-    #     [pprint(n.__dict__) for n in next_nodes]
-    #     # print("left_nodes:")
-    #     # [pprint(n.__dict__) for n in left_nodes]
-    #     return step_zeros + next_nodes# + left_nodes
-
-
-    # # Loop through all tasks
-    # '''
-    # Pop task only when successful in getting route
-    # Lower completion rate but this is the correct way i think?
-    # because it holds the task
-    # '''
-    # def _process_tasks(self):
-    #     print("process_tasks()")
-    #     tasks = self.get_viable_tasks()
-    #     while len(tasks) > 0:
-    #         print("inside while")
-    #         # t = tasks.pop(0)
-    #         t = tasks[0]
-    #         t_dict = t.get_json()
-    #         print("processing...")
-    #         print(t_dict)
-    #         route = self._route_extractor.find_route(t_dict)
-    #         if route is None:
-    #             return False
-
-    #         if all(route):
-    #             r = route[1]
-    #             r_int = [int(x) for x in r]
-    #             t_dict['route'] = r_int
-    #             topic = utils.add_destination(GLOBAL_VARS.RESPONSE_TO_BROKER, self._client_id)
-    #             utils.print_log("Sending {} to {}".format(t_dict['_id'], topic))
-    #             utils.print_log("Removing {} from task queue and appending to processed_tasks".format(t_dict['_id']))
-    #             utils.print_log("{} Is done! with route: {}".format(t_dict['_id'], r_int))
-    #             # self._processed_tasks.append(t_dict['_id'])
-    #             self.send(topic, json.dumps(t_dict))
-    #             self.remove_task(t_dict['_id'])
-    #             tasks.pop(0)
-
-    #             return True
-    #         else:
-    #             return False
-    #         # time.sleep(5)
-
+    # TODO: Remove current processing (just put uynder load or something)
     # This achieves higher success rate. Why?
     def process_tasks(self):
         print("Processing {} tasks remaining".format(len(self._tasks)))
-        # for t in self._tasks:
-        #     utils.print_log("Task:{}".format(t._id))
-        
         while len(self._tasks) > 0:
             self._tasks = sorted(self._tasks, key=lambda k: int(k.step))
             t_dict = {}
             try:
                 t = self._tasks.pop(0)
                 t_dict = t.get_json()
+
+                if utils.time_print(0) - t_dict['inquiry_time'] >= GLOBAL_VARS.TIMEOUT:
+                    return False
 
                 if t_dict['next_node'] is None and t_dict['step'] != '000':
                     utils.print_log("Cannot process {} yet.".format(t_dict['_id']))
@@ -184,17 +129,13 @@ class Worker_Mqtt(MyMQTTClass):
                     utils.print_log("Removing {} from task queue and appending to processed_tasks".format(t_dict['_id']))
                     utils.print_log("{} Is done! with route: {}".format(t_dict['_id'], r_int))
 
-                    log_dict = {}
-                    log_dict['time'] = utils.time_print(0)
-                    log_dict['processing'] = t_dict['_id']
-                    log_dict['queued_tasks'] = [task._id for task in self._tasks if task._id != t_dict['_id']]
-                    # log_dict['total_processed'] = len(self._processed_tasks)
-                    log_dict['total_processed'] = self._processed_tasks
-                    utils.write_log(self._log_file, log_dict)
-                    
+                    self._current_processing = t_dict['_id']
+
                     self._processed_tasks.append(t_dict['_id'])
                     self.send(topic, json.dumps(t_dict))
                     
+                    self._current_processing = ""
+                    # self.remove_task(t_dict['_id'])
                     return True
                 else:
                     return False
@@ -202,3 +143,15 @@ class Worker_Mqtt(MyMQTTClass):
                 print(e)
 
             time.sleep(0.2)
+
+    # Regularly log data until timeout
+    def logging_task(self):
+        while self._LOG_FLAG:
+            log_dict = {}
+            log_dict['time'] = utils.time_print(0)
+            # log_dict['processing'] = self._current_processing
+            log_dict['queued_tasks'] = [task._id for task in self._tasks if task._id != log_dict['processing']]
+            log_dict['total_processed'] = self._processed_tasks
+            utils.write_log(self._log_file, log_dict)
+
+            time.sleep(GLOBAL_VARS.LOG_RATE)

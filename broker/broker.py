@@ -15,8 +15,7 @@ if __name__ == "__main__":
 
     mqttc = Broker_Mqtt(host="mqtt", mongodb_c=mongodbc)
     mqttc.connect()
-    mqttc.start_sub_thread(["test/topic", 
-                            GLOBAL_VARS.QUERY_TO_BROKER, 
+    mqttc.start_sub_thread([GLOBAL_VARS.QUERY_TO_BROKER, 
                             GLOBAL_VARS.SUB_RESPONSE_TO_BROKER, 
                             GLOBAL_VARS.PROCESSED_TO_BROKER,
                             GLOBAL_VARS.SIMULATED_QUERY_TO_BROKER])

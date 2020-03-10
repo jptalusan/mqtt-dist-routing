@@ -4,7 +4,7 @@ import os
 from os import listdir
 from os.path import isfile, join
 from shapely.geometry import Point
-import pyproj    
+import pyproj
 from functools import partial
 from shapely.geometry import shape
 import shapely.ops as ops
@@ -149,3 +149,45 @@ def get_m2_area2(coordinate_list):
     cop = {"type": "Polygon", "coordinates": [zip(x, y)]}
     from shapely.geometry import shape
     return shape(cop).area / 1000000
+
+def plot_indices(rsu_arr, central, neighbors):
+    fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+    plt.grid(False)
+
+    plt.xticks(rotation=45)
+    v = rsu_arr[central]
+    plt.plot(*v.poly.exterior.xy, color='blue', alpha=1)
+    plt.fill(*v.poly.exterior.xy, color='blue', alpha=0.2)
+    plt.text(v.poly.centroid.x - 0.02, v.poly.centroid.y, str(v.get_idx()) + ':' +  str(v.grid_id), fontsize=8)
+
+    for n in neighbors:
+        v = rsu_arr[n]
+        plt.plot(*v.poly.exterior.xy, color='red', alpha=1)
+        plt.fill(*v.poly.exterior.xy, color='red', alpha=0.2)
+        plt.text(v.poly.centroid.x - 0.02, v.poly.centroid.y, str(v.get_idx()) + ':' +  str(v.grid_id), fontsize=8)
+
+    return fig, ax
+
+def get_neighbors_level(rsu_arr, r_idx, n_level):
+    neighbors = []
+
+    for _, v in rsu_arr[r_idx].get_neighbors(rsu_arr).items():
+        if v:
+            neighbors.append(v.get_idx())
+        
+    if n_level == 1:
+        return neighbors
+    
+    others = []
+    while n_level > 0:
+        neighbors = list(set(neighbors+others))
+        for n in neighbors:            
+            for _, v in rsu_arr[n].get_neighbors(rsu_arr).items():
+                if not v:
+                    continue
+                if v.get_idx() not in neighbors and \
+                v.get_idx() not in others and \
+                v.get_idx() != r_idx:
+                    others.append(v.get_idx())
+        n_level -= 1
+    return neighbors

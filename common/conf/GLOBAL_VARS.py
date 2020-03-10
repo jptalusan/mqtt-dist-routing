@@ -1,11 +1,21 @@
 # TOPICS
 BROKER_TO_RSU="middleware/rsu/"
+
 QUERY_TO_BROKER="middleware/broker/task"
 RESPONSE_TO_BROKER="middleware/broker/response"
+
 ERROR_RESPONSE_TO_BROKER="middleware/broker/response/error_response"
+
 SUB_RESPONSE_TO_BROKER="middleware/broker/response/+"
 PROCESSED_TO_BROKER="middleware/processed/+"
+
 SIMULATED_QUERY_TO_BROKER="middleware/broker/simulation_task"
+
+ALLOCATION_STATUS_TO_RSU="middleware/status/"
+ALLOCATION_STATUS_TO_BROKER="middleware/broker/status"
+
+START_LOGGING="middleware/rsu/startlogging"
+STOP_LOGGING="middleware/rsu/stoplogging"
 
 TASK_STATES = {
                 "ERROR": 99,
@@ -38,3 +48,5 @@ RSU_ID = "RSU_ID"
 #MongoDB Collections
 TASKS = "tasks"
 QUERIES = "queries"
+
+LOG_RATE = 0.1 #in seconds

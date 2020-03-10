@@ -28,6 +28,7 @@ def specify_task(task_list, parsed_id):
 def generate_task_from_sdt(s, d, t):
     pass
 
+# TODO: Can i add another column that states how many RSUs are used?
 def write_queries_to_mongodb(mongodb, query_df):
     print("write_queries_to_mongodb()")
     # print(query_df.head())

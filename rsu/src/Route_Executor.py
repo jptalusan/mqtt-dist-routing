@@ -23,8 +23,10 @@ import osmnx as ox
 import geohash_hilbert as ghh
 
 from src.conf import LOCAL_RSU_VARS
-from src import adjustable_grids as ag
+import common.src.adjustable_RSU as ag
 import common.src.basic_utils as utils
+import common.src.utility as geo_utils
+import common.src.graph_breakdown as gb
 
 DEBUG = False
 
@@ -44,12 +46,12 @@ class Route_Executor():
         self.avg_speeds_dir = os.path.join(data_dir, 'avg_speeds')
 
         # print(sub_graphs_dir)
-        self.sub_graph_dict = ag.read_saved_sub_graphs(sub_graphs_dir)
+        self.sub_graph_dict = geo_utils.read_saved_sub_graphs(sub_graphs_dir)
         # print(self.sub_graph_dict)
 
         target_area = LOCAL_RSU_VARS.EXTENDED_DOWNTOWN_NASH_POLY
         # Polys are just the larger boundaries to be used to "decrease" the number since we still use geohashing and it is still limited.
-        polys = ag.divide_grid(target_area, (x, y))
+        polys = gb.divide_grid(target_area, (x, y))
 
         # some details
         # print("Total Target area: {} km2".format(ag.get_km2_area(target_area)))
@@ -64,6 +66,10 @@ class Route_Executor():
                 r = ag.adjustable_RSU(gid, p, (i, j))
                 r.set_max_size(x, y)
                 self.rsu_arr.append(r)
+
+        file_path = os.path.join(data_dir, "{}-{}-rsu_arr.pkl".format(x, y))
+        with open(file_path, 'wb') as handle:
+            pickle.dump(self.rsu_arr, handle)
 
         file_path = os.path.join(data_dir, '{}-{}-G.pkl'.format(x, y))
         with open(file_path, 'rb') as handle:
@@ -143,7 +149,7 @@ class Route_Executor():
 
         # TODO: Get the old version of the data
         if with_neighbors and self.rsu_arr:
-            r = ag.get_rsu_by_grid_id(self.rsu_arr, grid_id)
+            r = geo_utils.get_rsu_by_grid_id(self.rsu_arr, grid_id)
             d = r.get_neighbors(self.rsu_arr)
 
             for _, n in d.items():

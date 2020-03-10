@@ -489,3 +489,4 @@ def restoring_missed_boundaries(G, rsu_arr, grid_df):
             print("{}/{} \t {} \t modified \t {} edges".format(count, total, grid_id, edge_counter))
             
     return G
+    
