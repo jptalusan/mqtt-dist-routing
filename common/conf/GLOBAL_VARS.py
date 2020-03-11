@@ -56,3 +56,7 @@ TASKS = "tasks"
 QUERIES = "queries"
 
 LOG_RATE = 0.5 #in seconds
+
+NEIGHBOR_LEVEL = 1
+QUEUE_THRESHOLD = 5
+DELAY_THRESHOLD = 5

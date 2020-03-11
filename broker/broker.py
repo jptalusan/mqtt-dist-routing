@@ -18,4 +18,5 @@ if __name__ == "__main__":
     mqttc.start_sub_thread([GLOBAL_VARS.QUERY_TO_BROKER, 
                             GLOBAL_VARS.SUB_RESPONSE_TO_BROKER, 
                             GLOBAL_VARS.PROCESSED_TO_BROKER,
-                            GLOBAL_VARS.SIMULATED_QUERY_TO_BROKER])
+                            GLOBAL_VARS.SIMULATED_QUERY_TO_BROKER,
+                            GLOBAL_VARS.ALLOCATION_STATUS_TO_BROKER])

@@ -30,9 +30,12 @@ class Broker_Mqtt(MyMQTTClass):
         data_dir = os.path.join(os.getcwd(), 'data')
 
         file_path = os.path.join(data_dir, '{}-{}-rsu_arr.pkl'.format(5, 5))
-            
         with open(file_path, 'rb') as handle:
             self._rsu_arr = pickle.load(handle)
+
+        file_path = os.path.join(data_dir, '{}-{}-G.pkl'.format(5, 5))
+        with open(file_path, 'rb') as handle:
+            self._nxg = pickle.load(handle)
 
     def mqtt_on_message(self, mqttc, obj, msg):
         # print("Inheritance:" + msg.topic+" "+str(msg.qos)+" "+str(msg.payload))
@@ -54,12 +57,16 @@ class Broker_Mqtt(MyMQTTClass):
             data = json.loads(utils.decode(msg.payload))
             print("Broker receives : {}".format(data))
 
-            self.send(GLOBAL_VARS.START_LOGGING, utils.encode("START"))
 
             tasks = generator.get_tasks(self._mongodb_c, data['x'], data['y'], data['number_of_queries'], sorted=True)
             # pprint(tasks)
             self.generate_mongo_tasks_entry(tasks)
+            for task in tasks:
+                self.subtask_allocation(GLOBAL_VARS.NEIGHBOR_LEVEL, task)
+
             self._tasks = tasks
+
+            self.send(GLOBAL_VARS.START_LOGGING, utils.encode("START"))
 
         if msg.topic == GLOBAL_VARS.QUERY_TO_BROKER:
                 print("Broker receives : {}".format(str(msg.payload)))
@@ -94,12 +101,14 @@ class Broker_Mqtt(MyMQTTClass):
 
         self.start_unsent_tasks_thread()
 
+    # TODO: Add assigned time maybe?
     # Place for adding new mongodb columns.
     # Unsent = 0, Sent = 1, Responded = 2, Task_done = 3
     def generate_mongo_tasks_entry(self, tasks):
         for task in tasks:
             data = task.get_json()
             data['inquiry_time'] = utils.time_print(int)
+            data['allocation_time'] = None
             data['processed_time'] = None
             data['state'] = GLOBAL_VARS.TASK_STATES["UNSENT"]
             data['next_node'] = None
@@ -122,6 +131,7 @@ class Broker_Mqtt(MyMQTTClass):
         _d = json.loads(_m)
         data = _d['data']
         data['inquiry_time'] = utils.time_print(int)
+        data['allocation_time'] = None
         data['processed_time'] = None
         data['state'] = GLOBAL_VARS.TASK_STATES["UNSENT"]
         data['next_node'] = None
@@ -158,14 +168,53 @@ class Broker_Mqtt(MyMQTTClass):
                 break
 
         
-    # Decide which 
-    def subtask_allocation(self, optimal_rsu, subtask):
-        nlevel = 1
-        r = geo_utils.get_rsu_by_grid_id(self._rsu_arr, optimal_rsu)
-        nn = geo_utils.get_neighbors_level(self._rsu_arr, r.get_idx(), nlevel)
-        print("subtask_allocation: {}".format(r.grid_id))
-        utils.print_log("Neighbors: {}".format(nn))
-        return optimal_rsu
+    # Decide which RSU to allocate to by sending status queries
+    def subtask_allocation(self, nlevel, subtask):
+        data = subtask.get_json()
+        gridA = data['gridA']
+        gridB = data['gridB']
+
+        if isinstance(gridA, int):
+            optimal_rsu = gridB
+        else:
+            optimal_rsu = gridA
+            
+        if nlevel == 0:
+            self._mongodb_c._db.tasks.update_one({"_id": data['_id']}, {'$set': {'rsu_assigned_to': optimal_rsu, 'allocation_time': utils.time_print(int)}})
+            return
+
+        elif nlevel == 1:
+            r = geo_utils.get_rsu_by_grid_id(self._rsu_arr, optimal_rsu)
+            nn = geo_utils.get_neighbors_level(self._rsu_arr, r.get_idx(), nlevel)
+            # print("subtask_allocation: {}".format(r.grid_id))
+            # utils.print_log("Neighbors: {}".format(nn))
+            
+            nn.insert(0, r.get_idx())
+            found = False
+            candidate_rsus = []
+            for n in nn:
+                rsu = self._rsu_arr[n]
+                candidate_rsus.append(rsu)
+                res = rsu.add_task(self._nxg, self._rsu_arr, subtask, force=False)
+                if res:
+                    found = True
+                    self._mongodb_c._db.tasks.update_one({"_id": data['_id']}, {'$set': {'rsu_assigned_to': rsu.grid_id, 'allocation_time': utils.time_print(int)}})
+                    break
+                '''
+                If not ok, move to the next one (keep which has lowest number)
+                '''
+            # Get RSU with least number of queue
+            if not found:
+                print("Not found by looking, must force...")
+                candidate_rsus = sorted(candidate_rsus, key=lambda rsu: len(rsu.queue))
+                candidate_rsus[0].add_task_forced(subtask)
+                # print(candidate_rsus)
+                grid_id = candidate_rsus[0].grid_id
+                self._mongodb_c._db.tasks.update_one({"_id": data['_id']}, {'$set': {'rsu_assigned_to': grid_id, 'allocation_time': utils.time_print(int)}})
+                    
+            # TODO: remove once i am sure it works
+            # time.sleep(5)
+            return
 
     # TODO: Check or create a new mqtt topic for replying to broker's inquiry of how "loaded" the RSUs are (task queue length) as well as checking distance between optimal
     # What is the optimal grid? rsu below in line 120?
@@ -173,12 +222,16 @@ class Broker_Mqtt(MyMQTTClass):
         print("get_unsent_tasks()")
         # [utils.print_log(task._id) for task in self._tasks]
         mongo_tasks = list(self._mongodb_c.find("tasks", {"state": {"$lt": GLOBAL_VARS.TASK_STATES["PROCESSED"]}}))
-        
+        time.sleep(0.2)
+
         # while len(tasks) > 0:
         while len(mongo_tasks) > 0:
             # self._tasks = sorted(self._tasks, key=lambda k: int(k.step))
             # for task in self._tasks:
             for task in mongo_tasks:
+                if task['rsu_assigned_to'] is None:
+                    continue
+
                 t_id = task['_id']
                 parsed_id = task['parsed_id']
 
@@ -198,7 +251,12 @@ class Broker_Mqtt(MyMQTTClass):
                     if q:
                         self._mongodb_c._db.queries.update_one({"_id": parsed_id}, {'$set': {'final_route': "ERROR", 'total_travel_time': "ERROR"}})
                     self.remove_one_task(t_id)
+
+                    # TODO: Not really sure which one runs at the end.. this or see below
                     self.send(GLOBAL_VARS.STOP_LOGGING, utils.encode("STOP"))
+
+                    self._mongodb_c.save_collection_to_json('queries')
+                    self._mongodb_c.save_collection_to_json('tasks')
                     continue
             
 
@@ -207,15 +265,7 @@ class Broker_Mqtt(MyMQTTClass):
                     if double_check['state'] > GLOBAL_VARS.TASK_STATES["SENT"]:
                         continue
                     
-                gridA = task['gridA']
-                gridB = task['gridB']
-
-                if isinstance(gridA, int):
-                    rsu = gridB
-                else:
-                    rsu = gridA
-
-                rsu = self.subtask_allocation(rsu, task)
+                rsu = task['rsu_assigned_to']
 
                 p_task = self.get_next_node_for_unsent_tasks(task['parsed_id'], task['step'], task['steps'])
                 if p_task:
@@ -240,7 +290,7 @@ class Broker_Mqtt(MyMQTTClass):
 
             mongo_tasks = list(self._mongodb_c.find("tasks", {"state": {"$lte": GLOBAL_VARS.TASK_STATES["PROCESSED"]}}))
             # random.shuffle(tasks)
-            # time.sleep(10)
+            time.sleep(0.2)
 
     def get_next_node_for_unsent_tasks(self, parsed_id, step, steps):
         utils.print_log("get_next_node_for_unsent_tasks({}, {}, {})".format(parsed_id, step, steps))
@@ -297,4 +347,8 @@ class Broker_Mqtt(MyMQTTClass):
                     # self._mongodb_c._db.tasks.update_many({"parsed_id": parsed_id}, {'$set': {'state': GLOBAL_VARS.TASK_STATES['COLLECTED']}})
 
                     # self.remove_task(parsed_id)
+
+                    # self.send(GLOBAL_VARS.STOP_LOGGING, utils.encode("STOP"))
+                    # self._mongodb_c.save_collection_to_json('queries')
+                    # self._mongodb_c.save_collection_to_json('tasks')
             # time.sleep(5)

@@ -1,5 +1,8 @@
 from pprint import pprint
 import pymongo
+import os
+import pickle
+import pandas as pd
 
 class MyMongoDBClass():
     def __init__(self, host="localhost", port=27017, db="admin", collection="tasks"):
@@ -55,3 +58,13 @@ class MyMongoDBClass():
 
     def get_client(self):
         return self._mongoc
+
+    def save_collection_to_json(self, collection):
+        if not os.path.exists(os.path.join(os.getcwd(), 'data')):
+            raise OSError("Must first download data, see README.md")
+        data_dir = os.path.join(os.getcwd(), 'data')
+
+        file_path = os.path.join(data_dir, '{}.pkl'.format(collection))
+        with open(file_path, 'wb') as handle:
+            df = pd.DataFrame(list(self._db[collection].find()))
+            df.to_pickle(handle)

@@ -107,14 +107,15 @@ def find_boundary_nodes(G, boundary_list):
     return found_nodes
 
 def get_grid_id_from_node(G, n):
+    print("get_grid_id_from_node()", n)
     node = G.node[n]
     if 'grid_id' in node:
         return node['grid_id']
     
-
     if 'is_bounds' in node:
         if node['is_bounds']:
-            return node['boundaries'][0]
+            if 'boundaries' in node:
+                return node['boundaries'][0]
     return None
         
 def manhattan_distance(rsu1, rsu2):

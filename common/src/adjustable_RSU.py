@@ -10,24 +10,18 @@ import math
 import datetime
 import time
 import numpy as np
-   
+
+from common.conf import GLOBAL_VARS
+import common.src.utility as geo_utils
+from pprint import pprint
+
+DEBUG = 1
+
 class adjustable_RSU(object):
-    
     # Class variables?
-    queue = []
-    queue_limit = 0
-    
-    curr_delay = 0.0
-    curr_px = 0.0
-    curr_accuracies = []
-    
-#     delay_threshold = 0
-#     model_accuracy = 0
-#     px_threshold = 0
+    queue_limit = GLOBAL_VARS.QUEUE_THRESHOLD
+    delay_threshold = GLOBAL_VARS.DELAY_THRESHOLD
     subgraph = None
-#     identity = ''
-    dataset = None
-    
 
     # Coords are x, y and not row, col.
     def __init__(self, grid_id, poly, coords):
@@ -39,103 +33,79 @@ class adjustable_RSU(object):
         self.curr_accuracies = []
         self.curr_delay = 0.0
         self.curr_px = 0.0
-        
-    
-    def load_with_data(self, subgraph=None, dataset=None):
-        if subgraph:
-            self.subgraph = subgraph
-        if dataset:
-            self.dataset = dataset
-            
-    def add_task(self, task, force=False, constraint='delay'):
-        task_px = task.calculate_total_px_time()
-        
-        # Affected by change in actual grid
-        task_accuracy = task.get_data_accuracy_stub()
-        
-        # Not affected by change in actual grid
-        optm_g, next_g = task.get_optimal_and_next_grids()
-        task_delay = task.get_communication_delay(optm_g, next_g)
-        
+
+    def get_manhattan_distance(self, other_rsu):
+        return abs(self.coords[0] - other_rsu.coords[0]) + \
+               abs(self.coords[1] - other_rsu.coords[1])
+
+    def add_task_forced(self, task):
+        self.queue.append(task)
+        print("Task: {}, assigned to RSU: {}".format(task, self.grid_id))
+        return True
+
+    def add_task(self, G, rsu_arr, task, force=False, constraints='queue'):
+        print("Trying to add task {} to {} with q[{}/{}]".format(task, self.grid_id, len(self.queue), self.queue_limit))
         if force:
-#             self.curr_px += task_px
-#             self.curr_accuracies.append(task_accuracy)
-#             self.curr_delay += task_delay
             self.queue.append(task)
             return True
         
-        # constraints
-        met_px_constraint    = False
-        met_model_constraint = False
-        met_delay_constraint = False
-        met_queue_constraint = False
+        # pprint(task.get_json())
+        ideal_grid = task.gridA
+
+        if isinstance(task.gridA, int):
+            ideal_grid = task.gridB
+        elif isinstance(task.gridA, str):
+            ideal_grid = task.gridA
+
+        if isinstance(task.gridB, int):
+            next_grid = geo_utils.get_grid_id_from_node(G, task.gridB)
+        elif isinstance(task.gridB, str):
+            next_grid = task.gridB
+        elif task.gridB is None:
+            next_grid = ideal_grid
+
+        ideal_rsu = geo_utils.get_rsu_by_grid_id(rsu_arr, ideal_grid)
+        next_rsu = geo_utils.get_rsu_by_grid_id(rsu_arr, next_grid)
+
+        # Not affected by change in actual grid
+        delay_ideal = self.get_manhattan_distance(ideal_rsu)
+        delay_next = self.get_manhattan_distance(next_rsu)
+        total_delay = delay_ideal + delay_next
+        print(delay_ideal, delay_next)
         
-        use_px_constraint = False
-        use_acc_constraint = False
+        # constraints
+        met_delay_constraint = True
+        met_queue_constraint = True
+        
         use_delay_constraint = False
         use_queue_constraint = False
         
-        constraints = constraint.split("|")
-        if 'px' in constraints:
-            use_px_constraint = True
-        if 'acc' in constraints:
-            use_acc_constraint = True
-        if 'delay' in constraints:
+        constraint_arr = constraints.split("|")
+        if 'delay' in constraint_arr:
             use_delay_constraint = True
-        if 'queue' in constraints:
+        if 'queue' in constraint_arr:
             use_queue_constraint = True
-            
-        if use_px_constraint:
-            processing = self.curr_px + task_px
-            if processing <= self.px_threshold:
-                met_px_constraint = True
-        else:
-            met_px_constraint = True
-        
-        if use_acc_constraint:
-            if task_accuracy >= self.model_accuracy:
-                met_model_constraint = True
-        else:
-            met_model_constraint = True
         
         if use_delay_constraint:
-            delay = self.curr_delay + task_delay
-            if delay <= self.delay_threshold:
-                met_delay_constraint = True
-        else:
-            met_delay_constraint = True
+            if total_delay > self.delay_threshold:
+                print("Failed delay.")
+                met_delay_constraint = False
         
         if use_queue_constraint:
-            if len(self.queue) < self.queue_limit:
-                met_queue_constraint = True
-        else:
-            met_queue_constraint = True
+            if (len(self.queue) + 1) > self.queue_limit:
+                print("Failed queue.")
+                met_queue_constraint = False
 
-        if met_px_constraint and \
-           met_model_constraint and \
-           met_delay_constraint and \
+        print("Reached here...{}, {}".format(met_delay_constraint, met_queue_constraint))
+        if met_delay_constraint and \
            met_queue_constraint:
-            if DEBUG == 1:
-                print("{} Adding task: {}-{}".format(self.identity, task.step_count, task.task_id))
+            print("{} Adding task: {}".format(self.grid_id, task._id))
             self.queue.append(task)
-            
-            self.curr_px += task_px
-            self.curr_accuracies.append(task_accuracy)
-            self.curr_delay += task_delay
-#             print("Success: {}".format(self))
+
             return True
         else:
+            print("Not assigned...")
             return False
-
-#     def __iter__(self):
-#         return self
-#     def __next__(self):
-#         self.idx += 1
-#         try:
-#             return self.data[self.idx-1]
-#         except IndexError:
-#             self.idx = 0
-#             raise StopIteration  # Done iterating.
 
     def get_neighbors(self, rsu_arr):
         x, y = self.coords[0], self.coords[1]
@@ -226,9 +196,9 @@ class adjustable_RSU(object):
         self.MAX_Y = Y
         
     def __repr__(self):
-        return str({'grid_id':self.grid_id, 'coords':self.coords, 'idx': self.get_idx()})
+        return str({'grid_id':self.grid_id, 'coords':self.coords, 'idx': self.get_idx(), 'queue':len(self.queue)})
     def __str__(self):
-        return 'RSU(grid_id=' + str(self.grid_id) + ', coords=' + str(self.coords) + ', idx=' + str(self.get_idx()) + ')'
+        return str({'grid_id':self.grid_id, 'coords':self.coords, 'idx': self.get_idx(), 'queue':len(self.queue)})
     
     
     # Methods that deal with task allocationm

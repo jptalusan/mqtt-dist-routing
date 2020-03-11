@@ -31,7 +31,7 @@ class Worker_Mqtt(MyMQTTClass):
     # TODO: Add method here to determine if task should be allocated here or not.
     def parse_topic(self, msg):
         t_arr = msg.topic.split("/")
-        # print("RSU: {}".format(t_arr))
+        print("RSU: {}".format(t_arr))
 
         # For logging only
         if msg.topic == GLOBAL_VARS.START_LOGGING:
@@ -46,6 +46,9 @@ class Worker_Mqtt(MyMQTTClass):
             log_dict['total_processed'] = list(set(self._processed_tasks))
             log_dict['timed_out'] = [task._id for task in self._tasks if task._id not in self._processed_tasks]
             utils.write_log(self._log_file, log_dict)
+
+        if GLOBAL_VARS.ALLOCATION_STATUS_TO_RSU in msg.topic:
+            print("RECEIVED ALLOC REQ.")
 
         if "middleware" in t_arr and "rsu" in t_arr:
             rsu = t_arr[-1]
