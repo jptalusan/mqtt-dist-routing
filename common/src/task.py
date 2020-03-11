@@ -34,6 +34,8 @@ class Task(object):
         self.step = self._id[-6:-3]
         self.steps = self._id[-3:]
 
+        self.retry_count = 0
+
     def get_tuple(self):
         pass
     
@@ -76,6 +78,7 @@ class Task(object):
         d['parsed_id'] = self.parsed_id
         d['step'] = self.step
         d['steps'] = self.steps
+        d['retry_count'] = self.retry_count
         
         return d
 

@@ -18,18 +18,24 @@ START_LOGGING="middleware/rsu/startlogging"
 STOP_LOGGING="middleware/rsu/stoplogging"
 
 TASK_STATES = {
-                "ERROR": 99,
-                "TIMEOUT": 98,
+                # OKS
                 "UNSENT": 0,
                 "SENT": 1,
-                "PROCESSED": 2,
-                "RESPONDED": 3,
-                "COLLECTED": 4
+                "ACK": 2,
+                "PROCESSED": 3,
+                "RESPONDED": 4,
+                "COLLECTED": 5,
+                
+                # ERRORS
+                "MAX_TRY": 97,
+                "TIMEOUT": 98,
+                "ERROR": 99
                 }
 
 # Routes get lost because of the limitations in the available nodes
 # Some routes pass through boundaries that are at the corner of 4 grids/rsu
-TIMEOUT = 30000
+TIMEOUT = 300000
+MAX_RETRIES = 200
 
 RSUS = {"0000": "SPBbQt", "0005": "SPBY71", "0010": "SPEPyO", "0015": "SPBPqg", "0020": "SPBarz", 
         "0001": "SPBXhJ", "0006": "SPBZYd", "0011": "SPEPeO", "0016": "SPBb9J", "0021": "SPEO7z", 
@@ -49,4 +55,4 @@ RSU_ID = "RSU_ID"
 TASKS = "tasks"
 QUERIES = "queries"
 
-LOG_RATE = 0.1 #in seconds
+LOG_RATE = 0.5 #in seconds

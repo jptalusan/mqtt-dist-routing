@@ -20,6 +20,7 @@ class Worker_Mqtt(MyMQTTClass):
         self._route_extractor = route_extractor
         self._current_processing = ""
         self._LOG_FLAG = True
+        self._LOG_START_TIME = None
 
         self._timer_task = threading.Thread(target=self.process_tasks, args = ())
         self._timer_task.start()
@@ -30,14 +31,21 @@ class Worker_Mqtt(MyMQTTClass):
     # TODO: Add method here to determine if task should be allocated here or not.
     def parse_topic(self, msg):
         t_arr = msg.topic.split("/")
-        print("RSU: {}".format(t_arr))
+        # print("RSU: {}".format(t_arr))
 
         # For logging only
         if msg.topic == GLOBAL_VARS.START_LOGGING:
+            self._LOG_START_TIME = utils.time_print(0)
             self._logging_task = threading.Thread(target=self.logging_task, args = ())
             self._logging_task.start()
         if msg.topic == GLOBAL_VARS.STOP_LOGGING:
             self._LOG_FLAG = False
+            log_dict = {}
+            log_dict['time'] = utils.time_print(0)
+            log_dict['queued_tasks'] = []
+            log_dict['total_processed'] = list(set(self._processed_tasks))
+            log_dict['timed_out'] = [task._id for task in self._tasks if task._id not in self._processed_tasks]
+            utils.write_log(self._log_file, log_dict)
 
         if "middleware" in t_arr and "rsu" in t_arr:
             rsu = t_arr[-1]
@@ -83,18 +91,17 @@ class Worker_Mqtt(MyMQTTClass):
                         return False
         return False
         
-    def remove_task(self, id):
-        print("remove_task({})".format(id))
-        print("Tasks:", self._tasks)
+    def update_task(self, id):
+        for _, task in enumerate(self._tasks):
+            if task._id == id:
+                task.state = GLOBAL_VARS.TASK_STATES["RESPONDED"]
+                break
 
+    def remove_task(self, id):
         for i, task in enumerate(self._tasks):
-            print(task._id)
-            print(id)
-            print(i)
             if task._id == id:
                 del self._tasks[i]
                 break
-        print("Tasks:", self._tasks)
 
     # TODO: Remove current processing (just put uynder load or something)
     # This achieves higher success rate. Why?
@@ -102,16 +109,17 @@ class Worker_Mqtt(MyMQTTClass):
         print("Processing {} tasks remaining".format(len(self._tasks)))
         while len(self._tasks) > 0:
             self._tasks = sorted(self._tasks, key=lambda k: int(k.step))
+
             t_dict = {}
             try:
                 t = self._tasks.pop(0)
                 t_dict = t.get_json()
 
-                if utils.time_print(0) - t_dict['inquiry_time'] >= GLOBAL_VARS.TIMEOUT:
-                    return False
-
                 if t_dict['next_node'] is None and t_dict['step'] != '000':
                     utils.print_log("Cannot process {} yet.".format(t_dict['_id']))
+                    return False
+
+                if utils.time_print(0) - t_dict['inquiry_time'] >= GLOBAL_VARS.TIMEOUT:
                     return False
 
                 route = self._route_extractor.find_route(t_dict)
@@ -129,12 +137,9 @@ class Worker_Mqtt(MyMQTTClass):
                     utils.print_log("Removing {} from task queue and appending to processed_tasks".format(t_dict['_id']))
                     utils.print_log("{} Is done! with route: {}".format(t_dict['_id'], r_int))
 
-                    self._current_processing = t_dict['_id']
-
                     self._processed_tasks.append(t_dict['_id'])
                     self.send(topic, json.dumps(t_dict))
                     
-                    self._current_processing = ""
                     # self.remove_task(t_dict['_id'])
                     return True
                 else:
@@ -142,7 +147,7 @@ class Worker_Mqtt(MyMQTTClass):
             except IndexError as e:
                 print(e)
 
-            time.sleep(0.2)
+            # time.sleep(10)
 
     # Regularly log data until timeout
     def logging_task(self):
@@ -150,8 +155,12 @@ class Worker_Mqtt(MyMQTTClass):
             log_dict = {}
             log_dict['time'] = utils.time_print(0)
             # log_dict['processing'] = self._current_processing
-            log_dict['queued_tasks'] = [task._id for task in self._tasks if task._id != log_dict['processing']]
-            log_dict['total_processed'] = self._processed_tasks
+            log_dict['queued_tasks'] = [task._id for task in self._tasks if task._id not in self._processed_tasks]
+            log_dict['total_processed'] = list(set(self._processed_tasks))
+            log_dict['timed_out'] = []
             utils.write_log(self._log_file, log_dict)
 
             time.sleep(GLOBAL_VARS.LOG_RATE)
+            if utils.time_print(0) - self._LOG_START_TIME > GLOBAL_VARS.TIMEOUT:
+                self._LOG_FLAG = False
+                break
