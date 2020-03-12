@@ -44,7 +44,8 @@ class adjustable_RSU(object):
         return True
 
     def add_task(self, G, rsu_arr, task, force=False, constraints='queue'):
-        print("Trying to add task {} to {} with q[{}/{}]".format(task, self.grid_id, len(self.queue), self.queue_limit))
+        if DEBUG == 1:
+            print("Trying to add task {} to {} with q[{}/{}]".format(task, self.grid_id, len(self.queue), self.queue_limit))
         if force:
             self.queue.append(task)
             return True
@@ -71,7 +72,6 @@ class adjustable_RSU(object):
         delay_ideal = self.get_manhattan_distance(ideal_rsu)
         delay_next = self.get_manhattan_distance(next_rsu)
         total_delay = delay_ideal + delay_next
-        print(delay_ideal, delay_next)
         
         # constraints
         met_delay_constraint = True
@@ -94,9 +94,8 @@ class adjustable_RSU(object):
             if (len(self.queue) + 1) > self.queue_limit:
                 met_queue_constraint = False
 
-        if met_delay_constraint and \
-           met_queue_constraint:
-           if DEBUG == 1:
+        if met_delay_constraint and met_queue_constraint:
+            if DEBUG == 1:
                 print("{} Adding task: {}".format(self.grid_id, task._id))
             self.queue.append(task)
 
