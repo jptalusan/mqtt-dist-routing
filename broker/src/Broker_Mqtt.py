@@ -48,8 +48,9 @@ class Broker_Mqtt(MyMQTTClass):
 
 
     def heartbeat(self):
-        self.send(GLOBAL_VARS.HEARTBEAT, utils.encode("HEARTBEAT"))
-        time.sleep(3)
+        while True:
+            self.send(GLOBAL_VARS.HEARTBEAT, utils.encode("HEARTBEAT"))
+            time.sleep(3)
 
     def start_unsent_tasks_thread(self):
         if not self._timer_task.is_alive():
