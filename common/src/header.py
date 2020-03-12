@@ -141,6 +141,9 @@ def generate_tasks(Qdf):
             task_json['state'] = GLOBAL_VARS.TASK_STATES["UNSENT"]
             task_json['next_node'] = None
             task_json['inquiry_time'] = utils.time_print(0)
+            task_json['next_rsu'] = None
+            task_json['rsu_assigned_to'] = None
+            task_json['route'] = None
             task_list.append(Task(task_json))
         task_list.extend(list(pairs))
     return task_list

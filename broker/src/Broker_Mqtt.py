@@ -27,6 +27,9 @@ class Broker_Mqtt(MyMQTTClass):
         self._collect_tasks = threading.Thread(target=self.compile_tasks_by_id, args = ())
         self._collect_tasks.start()
 
+        self._heartbeat = threading.Thread(target=self.heartbeat, args = ())
+        self._heartbeat.start()
+
         if not os.path.exists(os.path.join(os.getcwd(), 'data')):
             raise OSError("Must first download data, see README.md")
         data_dir = os.path.join(os.getcwd(), 'data')
@@ -42,6 +45,11 @@ class Broker_Mqtt(MyMQTTClass):
     def mqtt_on_message(self, mqttc, obj, msg):
         # print("Inheritance:" + msg.topic+" "+str(msg.qos)+" "+str(msg.payload))
         self.parse_topic(msg)
+
+
+    def heartbeat(self):
+        self.send(GLOBAL_VARS.HEARTBEAT, utils.encode("HEARTBEAT"))
+        time.sleep(3)
 
     def start_unsent_tasks_thread(self):
         if not self._timer_task.is_alive():
@@ -61,10 +69,12 @@ class Broker_Mqtt(MyMQTTClass):
 
 
             tasks = generator.get_tasks(self._mongodb_c, data['x'], data['y'], data['number_of_queries'], sorted=True)
-            # pprint(tasks)
+            
             self.generate_mongo_tasks_entry(tasks)
             for task in tasks:
                 self.subtask_allocation(GLOBAL_VARS.NEIGHBOR_LEVEL, task)
+            for task in tasks:
+                self.assign_next_rsu(task)
 
             self._tasks = tasks
 
@@ -119,6 +129,7 @@ class Broker_Mqtt(MyMQTTClass):
             data['travel_time'] = None
             data['rsu_assigned_to'] = None
             data['retry_count'] = 0
+            data['next_rsu'] = None
             t_id = data['_id']
 
             _DB = self._mongodb_c.get_db("admin")
@@ -142,6 +153,7 @@ class Broker_Mqtt(MyMQTTClass):
         data['travel_time'] = None
         data['rsu_assigned_to'] = None
         data['retry_count'] = 0
+        data['next_rsu'] = None
         t_id = data['_id']
 
         _DB = self._mongodb_c.get_db("admin")
@@ -170,6 +182,22 @@ class Broker_Mqtt(MyMQTTClass):
                 print("removed msny ({})".format(parsed_id))
                 break
 
+    def assign_next_rsu(self, subtask):
+        # Get next sub-task step
+        data = subtask.get_json()
+        _id = data['_id']
+        step = data['step']
+        steps = data['steps']
+        if step == steps:
+            return
+        next_step = str(int(step) + 1).zfill(3)
+        parsed_id = data['parsed_id']
+        res = self._mongodb_c._db.tasks.find_one({"parsed_id": parsed_id, "step": next_step})
+        # Should always have a result if it is not the last step, if none, then it really is an error in the task generation
+        next_rsu = res['rsu_assigned_to']
+        self._mongodb_c._db.tasks.update_one({"_id": _id}, {"$set": {"next_rsu": next_rsu}})
+        utils.print_log("Set to: {}".format(next_rsu))
+        pass
         
     # Decide which RSU to allocate to by sending status queries
     def subtask_allocation(self, nlevel, subtask):
@@ -224,7 +252,7 @@ class Broker_Mqtt(MyMQTTClass):
     def get_unsent_tasks(self):
         print("get_unsent_tasks()")
         # [utils.print_log(task._id) for task in self._tasks]
-        mongo_tasks = list(self._mongodb_c.find("tasks", {"state": {"$lt": GLOBAL_VARS.TASK_STATES["PROCESSED"]}}))
+        mongo_tasks = list(self._mongodb_c.find("tasks", {"state": {"$lt": GLOBAL_VARS.TASK_STATES["SENT"]}}))
         time.sleep(0.2)
 
         # while len(tasks) > 0:
@@ -272,14 +300,6 @@ class Broker_Mqtt(MyMQTTClass):
                     
                 rsu = task['rsu_assigned_to']
 
-                p_task = self.get_next_node_for_unsent_tasks(task['parsed_id'], task['step'], task['steps'])
-                if p_task:
-                    utils.print_log("Got next_node:{}".format(p_task['next_node']))
-                    task['next_node'] = p_task['next_node']
-
-                if p_task and task['next_node'] is None:
-                    continue
-
                 topic = utils.add_destination(GLOBAL_VARS.BROKER_TO_RSU, rsu)
                 utils.print_log("Broker sending task {} to topic: rsu-{}".format(t_id, utils.get_worker_from_topic(topic)))
                 payload = json.dumps(task)
@@ -293,9 +313,9 @@ class Broker_Mqtt(MyMQTTClass):
                 self._mongodb_c._db.tasks.update({'_id': t_id}, {'$inc': {'retry_count': 1}})
                 self.send(topic, utils.encode(payload))
 
-            mongo_tasks = list(self._mongodb_c.find("tasks", {"state": {"$lte": GLOBAL_VARS.TASK_STATES["PROCESSED"]}}))
+            mongo_tasks = list(self._mongodb_c.find("tasks", {"state": {"$lt": GLOBAL_VARS.TASK_STATES["SENT"]}}))
             # random.shuffle(tasks)
-            time.sleep(0.2)
+            time.sleep(5)
 
     def get_next_node_for_unsent_tasks(self, parsed_id, step, steps):
         utils.print_log("get_next_node_for_unsent_tasks({}, {}, {})".format(parsed_id, step, steps))
@@ -326,8 +346,6 @@ class Broker_Mqtt(MyMQTTClass):
                 # utils.print_log(parsed_id)
                 count = self._mongodb_c._db.tasks.count_documents({"parsed_id": parsed_id, "state": GLOBAL_VARS.TASK_STATES["RESPONDED"]})
                 temps = self._mongodb_c._db.tasks.find_one({"parsed_id": parsed_id, "state": GLOBAL_VARS.TASK_STATES["RESPONDED"]})
-                # count = self._mongodb_c._db.tasks.count_documents({"parsed_id": parsed_id, "route": {"$ne": None}})
-                # temps = self._mongodb_c._db.tasks.find_one({"parsed_id": parsed_id, "route": {"$ne": None}})
 
                 if not temps:
                     continue

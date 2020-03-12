@@ -42,5 +42,7 @@ if __name__ == "__main__":
         mqttc.connect()
         mqttc.start_sub_thread([GLOBAL_VARS.START_LOGGING,
                                 GLOBAL_VARS.STOP_LOGGING,
+                                GLOBAL_VARS.HEARTBEAT,
                                 "{}{}".format(GLOBAL_VARS.ALLOCATION_STATUS_TO_RSU, GRID_ID), 
-                                "{}{}".format(GLOBAL_VARS.BROKER_TO_RSU, GRID_ID)])
+                                "{}{}".format(GLOBAL_VARS.BROKER_TO_RSU, GRID_ID), 
+                                "{}{}".format(GLOBAL_VARS.RSU_TO_RSU, GRID_ID)])
