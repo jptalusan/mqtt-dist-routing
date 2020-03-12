@@ -19,6 +19,8 @@ class Broker_Mqtt(MyMQTTClass):
         self._mongodb_c = mongodb_c
 
         self._tasks = []
+        
+        self._log_flag_once = False
         self._timer_task = threading.Thread(target=self.get_unsent_tasks, args = ())
         self._timer_task.start()
         
@@ -66,6 +68,7 @@ class Broker_Mqtt(MyMQTTClass):
 
             self._tasks = tasks
 
+            self._log_flag_once = False
             self.send(GLOBAL_VARS.START_LOGGING, utils.encode("START"))
 
         if msg.topic == GLOBAL_VARS.QUERY_TO_BROKER:
@@ -253,7 +256,9 @@ class Broker_Mqtt(MyMQTTClass):
                     self.remove_one_task(t_id)
 
                     # TODO: Not really sure which one runs at the end.. this or see below
-                    self.send(GLOBAL_VARS.STOP_LOGGING, utils.encode("STOP"))
+                    if not self._log_flag_once:
+                        self.send(GLOBAL_VARS.STOP_LOGGING, utils.encode("STOP"))
+                        self._log_flag_once = True
 
                     self._mongodb_c.save_collection_to_json('queries')
                     self._mongodb_c.save_collection_to_json('tasks')

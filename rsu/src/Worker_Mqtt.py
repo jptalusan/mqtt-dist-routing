@@ -36,8 +36,8 @@ class Worker_Mqtt(MyMQTTClass):
         # For logging only
         if msg.topic == GLOBAL_VARS.START_LOGGING:
             self._LOG_START_TIME = utils.time_print(0)
-            self._logging_task = threading.Thread(target=self.logging_task, args = ())
-            self._logging_task.start()
+            # self._logging_task = threading.Thread(target=self.logging_task, args = ())
+            # self._logging_task.start()
         if msg.topic == GLOBAL_VARS.STOP_LOGGING:
             self._LOG_FLAG = False
             log_dict = {}
@@ -143,7 +143,12 @@ class Worker_Mqtt(MyMQTTClass):
                     self._processed_tasks.append(t_dict['_id'])
                     self.send(topic, json.dumps(t_dict))
                     
-                    # self.remove_task(t_dict['_id'])
+                    log_dict = {}
+                    log_dict['time'] = utils.time_print(0)
+                    log_dict['queued_tasks'] = [task._id for task in self._tasks if task._id not in self._processed_tasks]
+                    log_dict['total_processed'] = list(set(self._processed_tasks))
+                    log_dict['timed_out'] = []
+                    utils.write_log(self._log_file, log_dict)
                     return True
                 else:
                     return False

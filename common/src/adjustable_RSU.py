@@ -15,7 +15,7 @@ from common.conf import GLOBAL_VARS
 import common.src.utility as geo_utils
 from pprint import pprint
 
-DEBUG = 1
+DEBUG = 0
 
 class adjustable_RSU(object):
     # Class variables?
@@ -88,23 +88,20 @@ class adjustable_RSU(object):
         
         if use_delay_constraint:
             if total_delay > self.delay_threshold:
-                print("Failed delay.")
                 met_delay_constraint = False
         
         if use_queue_constraint:
             if (len(self.queue) + 1) > self.queue_limit:
-                print("Failed queue.")
                 met_queue_constraint = False
 
-        print("Reached here...{}, {}".format(met_delay_constraint, met_queue_constraint))
         if met_delay_constraint and \
            met_queue_constraint:
-            print("{} Adding task: {}".format(self.grid_id, task._id))
+           if DEBUG == 1:
+                print("{} Adding task: {}".format(self.grid_id, task._id))
             self.queue.append(task)
 
             return True
         else:
-            print("Not assigned...")
             return False
 
     def get_neighbors(self, rsu_arr):

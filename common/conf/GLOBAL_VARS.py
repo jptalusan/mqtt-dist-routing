@@ -34,8 +34,8 @@ TASK_STATES = {
 
 # Routes get lost because of the limitations in the available nodes
 # Some routes pass through boundaries that are at the corner of 4 grids/rsu
-TIMEOUT = 300000
-MAX_RETRIES = 200
+TIMEOUT = 10000
+MAX_RETRIES = 25
 
 RSUS = {"0000": "SPBbQt", "0005": "SPBY71", "0010": "SPEPyO", "0015": "SPBPqg", "0020": "SPBarz", 
         "0001": "SPBXhJ", "0006": "SPBZYd", "0011": "SPEPeO", "0016": "SPBb9J", "0021": "SPEO7z", 
