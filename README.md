@@ -2,56 +2,8 @@
 Trying something newer and simpler just using mqtt.  
 
 ## Branch information  
-+-------+                  +---------+                    +-------+                      +-------+                       
-| User  |                  | Broker  |                    | RSU1  |                      | RSU2  |                       
-+-------+                  +---------+                    +-------+                      +-------+                       
-    |                           |                             |                              |                           
-    | Send query (s, d, t)      |                             |                              |                           
-    |-------------------------->|                             |                              |                           
-    |                           |                             |                              |                           
-    |                           | Prepare query sub-tasks     |                              |                           
-    |                           |------------------------     |                              |                           
-    |                           |                       |     |                              |                           
-    |                           |<-----------------------     |                              |                           
-    |                           |                             |                              |                           
-    |                           | Prepare allocation          |                              |                           
-    |                           |-------------------          |                              |                           
-    |                           |                  |          |                              |                           
-    |                           |<------------------          |                              |                           
-    |                           |                             |                              |                           
-    |                           | Send sub-task 1             |                              |                           
-    |                           |---------------------------->|                              |                           
-    |                           |                             |                              |                           
-    |                           | Send sub-task 2             |                              |                           
-    |                           |----------------------------------------------------------->|                           
-    |                           |                             |                              |                           
-    |                           |                             | Find route of sub-task 1     |                           
-    |                           |                             |-------------------------     |                           
-    |                           |                             |                        |     |                           
-    |                           |                             |<------------------------     |                           
-    |                           |                             |                              |                           
-    |                           |                             | Send next node               |                           
-    |                           |                             |----------------------------->|                           
-    |                           |                             |                              |                           
-    |                           |                  Send route |                              |                           
-    |                           |<----------------------------|                              |                           
-    |                           |                             |                              |                           
-    |                           |                             |                              | Find route of sub-task 2  
-    |                           |                             |                              |-------------------------  
-    |                           |                             |                              |                        |  
-    |                           |                             |                              |<------------------------  
-    |                           |                             |                              |                           
-    |                           |                             |                   Send route |                           
-    |                           |<-----------------------------------------------------------|                           
-    |                           |                             |                              |                           
-    |                           | Collect route               |                              |                           
-    |                           |--------------               |                              |                           
-    |                           |             |               |                              |                           
-    |                           |<-------------               |                              |                           
-    |                           |                             |                              |                           
-    |              Return route |                             |                              |                           
-    |<--------------------------|                             |                              |                           
-    |                           |                             |                              |                           
+![Sequence diagram of branch]
+(https://photos.google.com/share/AF1QipMoKL48FmlfDAFnA535b0jIzN6GpT6D0LoGGjDWXJZAYbyPMESlo0OVAZ1ZvgVhnw/photo/AF1QipOtvIpO-IOF3iROpfN41PARgKpztL3BYb3ArWg?key=djBZbnBneXhka0FJRzRIZEVMam93aUI0UU0yd0Vn)
 
 ## MongoDB and MQTT broker  
 1. Open a separate terminal.  
