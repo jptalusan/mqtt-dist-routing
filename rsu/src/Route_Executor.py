@@ -32,7 +32,6 @@ DEBUG = False
 
 class Route_Executor():
     def __init__(self, x, y):
-        print("Route_Executor:__init__")
         if not os.path.exists(os.path.join(os.getcwd(), 'data')):
             raise OSError("Must first download data, see README.md")
         data_dir = os.path.join(os.getcwd(), 'data')
@@ -78,7 +77,7 @@ class Route_Executor():
         # Find what are the things needed to perform the route execution
 
     def find_route(self, task):
-        print("Find_route of task: ", task['_id'])
+        # print("Find_route of task: ", task['_id'])
         # Assuming first all tasks are assigned to one single RSU
         # Add checking for task Id so can reset the visualization
         # task_queue = task_list[8:14]
@@ -99,12 +98,14 @@ class Route_Executor():
 
         if next_node is None:
             r = self.get_task_route(node1=n, gridA=gA, gridB=gB, node2=None, time=t)
-            print("{}-node1: {}, gridA: {}, gridB: {}, node2: None, time: {}".
-                format(task_count, n, gA, gB, t))
+            if DEBUG:
+                print("{}-node1: {}, gridA: {}, gridB: {}, node2: None, time: {}".
+                    format(task_count, n, gA, gB, t))
         elif next_node:
             r = self.get_task_route(node1=n, gridA=gA, gridB=gB, node2=next_node, time=t)
-            print("{}-node1: {}, gridA: {}, gridB: {}, node2: {}, time: {}".
-                format(task_count, n, gA, gB, next_node, t))
+            if DEBUG:
+                print("{}-node1: {}, gridA: {}, gridB: {}, node2: {}, time: {}".
+                    format(task_count, n, gA, gB, next_node, t))
         # print(r)
         return r
 

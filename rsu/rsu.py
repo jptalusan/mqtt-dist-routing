@@ -10,7 +10,7 @@ GRID_ID = GLOBAL_VARS.RSUS[RSU_ID]
 
 if __name__ == "__main__":
     r_ex = Route_Executor.Route_Executor(x = 5, y = 5)
-    print("GRID_ID:", GRID_ID)
+    # print("GRID_ID:", GRID_ID)
 
     if not os.path.exists(os.path.join(os.getcwd(), 'data')):
         raise OSError("Must first download data, see README.md")
@@ -28,9 +28,6 @@ if __name__ == "__main__":
         except OSError:
             pass
         mqttc = Worker_Mqtt(host="mqtt", client_id=client_id, route_extractor=r_ex, log_file=log_file)
-        mqttc.connect()
-        mqttc.start_sub_thread(["test/topic", 
-                                "middleware/rsu/+"])
     else:
         client_id = GRID_ID
         log_file = os.path.join(logs_dir, '{}.csv'.format(client_id))
@@ -38,11 +35,11 @@ if __name__ == "__main__":
             os.remove(log_file)
         except OSError:
             pass
-        mqttc = Worker_Mqtt(host="mqtt", client_id=client_id, route_extractor=r_ex, log_file=log_file)
-        mqttc.connect()
-        mqttc.start_sub_thread([GLOBAL_VARS.START_LOGGING,
-                                GLOBAL_VARS.STOP_LOGGING,
-                                GLOBAL_VARS.HEARTBEAT,
-                                "{}{}".format(GLOBAL_VARS.ALLOCATION_STATUS_TO_RSU, GRID_ID), 
-                                "{}{}".format(GLOBAL_VARS.BROKER_TO_RSU, GRID_ID), 
-                                "{}{}".format(GLOBAL_VARS.RSU_TO_RSU, GRID_ID)])
+        mqttc = Worker_Mqtt(host="mqtt", client_id=client_id, route_extractor=r_ex, log_file=log_file, mongodb_c=None)
+
+    mqttc.connect()
+    mqttc.start_sub_thread([GLOBAL_VARS.START_LOGGING,
+                            GLOBAL_VARS.STOP_LOGGING,
+                            "{}{}".format(GLOBAL_VARS.ALLOCATION_STATUS_TO_RSU, GRID_ID), 
+                            "{}{}".format(GLOBAL_VARS.BROKER_TO_RSU, GRID_ID), 
+                            "{}{}".format(GLOBAL_VARS.RSU_TO_RSU, GRID_ID)])
