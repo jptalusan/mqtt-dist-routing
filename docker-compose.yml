@@ -17,7 +17,7 @@ services:
 
   rsu-0000:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -33,7 +33,7 @@ services:
 
   rsu-0001:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -49,7 +49,7 @@ services:
 
   rsu-0002:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -65,7 +65,7 @@ services:
 
   rsu-0003:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -81,7 +81,7 @@ services:
 
   rsu-0004:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -97,7 +97,7 @@ services:
 
   rsu-0005:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -113,7 +113,7 @@ services:
 
   rsu-0006:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -129,7 +129,7 @@ services:
 
   rsu-0007:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -144,9 +144,8 @@ services:
       - '/usr/src/app/rsu.py'
 
   rsu-0008:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -162,7 +161,7 @@ services:
 
   rsu-0009:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -178,7 +177,7 @@ services:
 
   rsu-0010:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -194,7 +193,7 @@ services:
 
   rsu-0011:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -210,7 +209,7 @@ services:
 
   rsu-0012:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -226,7 +225,7 @@ services:
 
   rsu-0013:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -241,9 +240,8 @@ services:
       - '/usr/src/app/rsu.py'
 
   rsu-0014:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -259,7 +257,7 @@ services:
 
   rsu-0015:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -275,7 +273,7 @@ services:
 
   rsu-0016:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -291,7 +289,7 @@ services:
 
   rsu-0017:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -307,7 +305,7 @@ services:
 
   rsu-0018:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -323,7 +321,7 @@ services:
 
   rsu-0019:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -339,7 +337,7 @@ services:
 
   rsu-0020:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -355,7 +353,7 @@ services:
 
   rsu-0021:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -371,7 +369,7 @@ services:
 
   rsu-0022:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -387,7 +385,7 @@ services:
 
   rsu-0023:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
@@ -403,7 +401,7 @@ services:
 
   rsu-0024:
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z

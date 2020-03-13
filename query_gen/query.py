@@ -89,39 +89,6 @@ def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
-# TODO: Add param for multiprocessing
-# if __name__ == '__main__':
-    # x, y = 5, 5
-    # number_of_queries = 5
-
-    # # TODO: Fix this again
-    # # cores = multi.cpu_count()
-    # # pool = Pool(processes = cores)
-    # # print("Cores:", cores)
-    # # tasks = get_tasks(x, y, number_of_queries)
-    # # # send_tasks(0, tasks)
-
-    # # if number_of_queries > cores:
-    # #     task_chunks = chunks(tasks, len(tasks)//cores)
-    # #     for i, chunk in enumerate(task_chunks):
-    # #         pool.apply_async(send_tasks, args=(i, chunk,))
-    # #     pool.close()
-    # #     pool.join()
-    # # else:
-    # #     # tasks = specify_task(tasks, "e3d58ea2")
-    # #     send_tasks(0, tasks)
-    
-    # mqttc = MyMQTTClass()
-    # mqttc.connect()
-    # mqttc.open()
-
-    # payload = {'x': x, 'y': y, 'number_of_queries': number_of_queries}
-    # print(payload)
-    
-    # data = json.dumps(payload)
-    # mqttc.send(GLOBAL_VARS.SIMULATED_QUERY_TO_BROKER, data)
-    # mqttc.close()
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("a")

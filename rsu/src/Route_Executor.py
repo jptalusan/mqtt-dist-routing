@@ -161,8 +161,6 @@ class Route_Executor():
                         G = {**G, **g}
         return G
 
-    # TODO: Find least time between 2 grids
-    # using custom networkx
     def get_bounds_between_two_grids(self, grid1, grid2):
         possible_nodes = []
         sg1 = self.sub_graph_dict[grid1]
