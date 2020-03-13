@@ -35,11 +35,6 @@ TASK_STATES = {
                 "ERROR": 99
                 }
 
-# Routes get lost because of the limitations in the available nodes
-# Some routes pass through boundaries that are at the corner of 4 grids/rsu
-TIMEOUT = 140000
-MAX_RETRIES = 5
-
 RSUS = {"0000": "SPBbQt", "0005": "SPBY71", "0010": "SPEPyO", "0015": "SPBPqg", "0020": "SPBarz", 
         "0001": "SPBXhJ", "0006": "SPBZYd", "0011": "SPEPeO", "0016": "SPBb9J", "0021": "SPEO7z", 
         "0002": "SPB_DO", "0007": "SPB_r0", "0012": "SPBaCP", "0017": "SPBZuN", "0022": "SPE_Pa", 
@@ -60,6 +55,11 @@ QUERIES = "queries"
 
 LOG_RATE = 0.5 #in seconds
 
-NEIGHBOR_LEVEL = 1
+# Routes get lost because of the limitations in the available nodes
+# Some routes pass through boundaries that are at the corner of 4 grids/rsu
+TIMEOUT = 140000
+MAX_RETRIES = 5
+
+NEIGHBOR_LEVEL = 0
 QUEUE_THRESHOLD = 50
 DELAY_THRESHOLD = 5

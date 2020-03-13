@@ -60,7 +60,8 @@ class Broker_Mqtt(MyMQTTClass):
                 self.assign_next_rsu(task)
             elapsed = utils.time_print(0) - start
             utils.print_log("Total allocation time: {} ms".format(elapsed))
-            
+            time.sleep(5)
+
             self._tasks = tasks
             self._log_flag_once = False
 
