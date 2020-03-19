@@ -57,7 +57,7 @@ LOG_RATE = 0.5 #in seconds
 
 # Routes get lost because of the limitations in the available nodes
 # Some routes pass through boundaries that are at the corner of 4 grids/rsu
-TIMEOUT = 140000
+TIMEOUT = 140000000
 MAX_RETRIES = 5
 
 NEIGHBOR_LEVEL = 1

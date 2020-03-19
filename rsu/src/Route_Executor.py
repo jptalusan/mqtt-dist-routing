@@ -13,20 +13,18 @@ import time
 import datetime
 import sys
 import copy
-
-from os import listdir
-from os.path import isfile, join
-
 import networkx as nx
 import osmnx as ox
-
 import geohash_hilbert as ghh
+from os import listdir
+from os.path import isfile, join
 
 from src.conf import LOCAL_RSU_VARS
 import common.src.adjustable_RSU as ag
 import common.src.basic_utils as utils
 import common.src.utility as geo_utils
 import common.src.graph_breakdown as gb
+import src.Route_Lambdas as rl
 
 DEBUG = False
 
@@ -39,10 +37,6 @@ class Route_Executor():
         if not os.path.exists(os.path.join(data_dir, 'sub_graphs')):
             os.mkdir(os.path.join(data_dir, 'sub_graphs'))
         sub_graphs_dir = os.path.join(data_dir, 'sub_graphs')
-
-        if not os.path.exists(os.path.join(data_dir, 'avg_speeds')):
-            os.mkdir(os.path.join(data_dir, 'avg_speeds'))
-        self.avg_speeds_dir = os.path.join(data_dir, 'avg_speeds')
 
         # print(sub_graphs_dir)
         self.sub_graph_dict = geo_utils.read_saved_sub_graphs(sub_graphs_dir)
@@ -109,58 +103,6 @@ class Route_Executor():
         # print(r)
         return r
 
-    def get_avg_speed_at_edge(self, start, end, attr, sensor_data=None, time_window=None):
-        tmc_id = None
-        length = None
-        time_traversed = 999
-        if 0 not in attr:
-            key = random.choice(list(attr))
-            tmc_id = attr[key]['tmc_id']
-            length = attr[key]['length']
-        else:
-            if 0 in attr:
-                if 'tmc_id' in attr[0]:
-                    tmc_id = attr[0]['tmc_id']
-                if 'length' in attr[0]:
-                    length = attr[0]['length']
-        
-        if tmc_id and tmc_id in sensor_data:
-            average_speed_at_time_window = sensor_data[tmc_id]['speeds'][time_window]
-            time_traversed = length / average_speed_at_time_window
-        return time_traversed
-
-    def random_speeds(self, start, end, attr, sensor_data=None, time_window=None):
-        if 0 not in attr:
-            key = random.choice(list(attr))
-            tmc_id = attr[key]['tmc_id']
-        else:
-            tmc_id = attr[0]['tmc_id']
-        average_speed_at_time_window = random.uniform(1, 100)
-        return average_speed_at_time_window
-
-    def get_speeds_hash_for_grid(self, grid_id, with_neighbors=False):
-        # TODO: If the grid_id is not equal to this RSUs grid_id, then get historical data.
-        # Else get fresh data.
-        #     print("get_speeds_hash_for_grid(grid_id={})".format(grid_id))
-        G = {}
-        file_path = os.path.join(self.avg_speeds_dir, '{}-avg_speeds.pkl'.format(grid_id))
-        with open(file_path, 'rb') as handle:
-            g = pickle.load(handle)
-            G = {**G, **g}
-
-        # TODO: Get the old version of the data
-        if with_neighbors and self.rsu_arr:
-            r = geo_utils.get_rsu_by_grid_id(self.rsu_arr, grid_id)
-            d = r.get_neighbors(self.rsu_arr)
-
-            for _, n in d.items():
-                if n:
-                    file_path = os.path.join(self.avg_speeds_dir, '{}-avg_speeds.pkl'.format(n.grid_id))
-                    with open(file_path, 'rb') as handle:
-                        g = pickle.load(handle)
-                        G = {**G, **g}
-        return G
-
     def get_bounds_between_two_grids(self, grid1, grid2):
         possible_nodes = []
         sg1 = self.sub_graph_dict[grid1]
@@ -190,12 +132,13 @@ class Route_Executor():
         
     def get_shortest_route(self, sg, grid, node, time, bounds_list):
         # Assume that rsu_arr is present in the rsu
-        G = self.get_speeds_hash_for_grid(grid, with_neighbors = True)
+        # G = self.get_speeds_hash_for_grid(grid, with_neighbors = True)
+        G = rl.get_speeds_hash_for_grid(grid, self.rsu_arr, with_neighbors=True)
         fastest = math.inf
         route = None
         for b in bounds_list:
             try:
-                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node, b, self.get_avg_speed_at_edge, G, time_window=time)
+                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node, b, rl.get_travel_time, G, time_window=time)
                 if total_time < fastest:
                     fastest = total_time
                     route = avg_speed_route
@@ -237,13 +180,14 @@ class Route_Executor():
                 print("Task C")
             
             # Assume that rsu_arr is present in the rsu
-            G = self.get_speeds_hash_for_grid(gridA, with_neighbors=True)
+            # G = self.get_speeds_hash_for_grid(gridA, with_neighbors=True)
+            G = rl.get_speeds_hash_for_grid(gridA, self.rsu_arr, with_neighbors=True)
             
             fastest = math.inf
             route = None
             try:
                 sg = self.whole_graph
-                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node2, node1, self.get_avg_speed_at_edge, G, time_window=time)
+                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node2, node1, rl.get_travel_time, G, time_window=time)
                 if total_time < fastest:
                     fastest = total_time
                     route = avg_speed_route
@@ -262,13 +206,14 @@ class Route_Executor():
                 print("Task D")
 
             # Assume that rsu_arr is present in the rsu
-            G = self.get_speeds_hash_for_grid(gridB, with_neighbors=True)
+            # G = self.get_speeds_hash_for_grid(gridB, with_neighbors=True)
+            G = rl.get_speeds_hash_for_grid(gridB, self.rsu_arr, with_neighbors=True)
             
             fastest = math.inf
             route = None
             try:
                 sg = self.whole_graph
-                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node1, gridA, self.get_avg_speed_at_edge, G, time_window=time)
+                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node1, gridA, rl.get_travel_time, G, time_window=time)
 
                 if total_time < fastest:
                     fastest = total_time
