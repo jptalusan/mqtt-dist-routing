@@ -3,13 +3,18 @@ import os
 from src.Worker_Mqtt import Worker_Mqtt
 from src import Route_Executor as Route_Executor
 from common.conf import GLOBAL_VARS
+from common.src.mongo_class import MyMongoDBClass
 
 DEBUG = False
 RSU_ID = os.getenv(GLOBAL_VARS.RSU_ID)
 GRID_ID = GLOBAL_VARS.RSUS[RSU_ID]
 
 if __name__ == "__main__":
+    # mongodbc = MyMongoDBClass(host="mongo", db="admin")
+
     r_ex = Route_Executor.Route_Executor(x = 5, y = 5)
+    # r_ex.assign_mongodb(mongodbc)
+
     # print("GRID_ID:", GRID_ID)
 
     if not os.path.exists(os.path.join(os.getcwd(), 'data')):
