@@ -99,7 +99,7 @@ if __name__ == '__main__':
         mqttc = MyMQTTClass()
         mqttc.connect()
         mqttc.open()
-
+        print("Query sent: {}".format(datetime.now().strftime("%d %b %Y %H:%M:%S.%f")))
         payload = {'x': x, 'y': y, 'number_of_queries': number_of_queries}
         print(payload)
         

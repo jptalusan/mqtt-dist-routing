@@ -440,9 +440,11 @@ class Route_Executor():
             tmc_id = attr[key]['tmc_id']
         else:
             tmc_id = attr[0]['tmc_id']
-        average_speed_at_time_window = random.uniform(1, 100)
+        average_speed_at_time_window = random.uniform(1.86, 80.78)
         return average_speed_at_time_window
 
+    # HACK: The with_neighbors is a work around because else it has no idea of others, or i should load all?
+    # IDEA: Local should be more granular, but then i would need to change even the request/query to include more granularity in the time_window
     def get_speeds_hash_for_grid(self, grid_id, with_neighbors=False):
         G = {}
         file_path = os.path.join(self.avg_speeds_dir, '{}-avg_speeds.pkl'.format(grid_id))

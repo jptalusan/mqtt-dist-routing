@@ -61,7 +61,7 @@ class Broker_Mqtt(MyMQTTClass):
             elapsed = utils.time_print(0) - start
             utils.print_log("Total allocation time: {} ms".format(elapsed))
 
-            # DEBUG: Why here?1
+            # HACK: Why here?1
             # time.sleep(1)
 
             self._tasks = tasks
@@ -185,7 +185,7 @@ class Broker_Mqtt(MyMQTTClass):
             self._mongodb_c._db.tasks.update_one({"_id": data['_id']}, {'$set': {'rsu_assigned_to': optimal_rsu, 'allocation_time': utils.time_print(int)}})
             return
 
-        elif nlevel == 1:
+        if nlevel > 0:
             r = geo_utils.get_rsu_by_grid_id(self._rsu_arr, optimal_rsu)
             nn = geo_utils.get_neighbors_level(self._rsu_arr, r.get_idx(), nlevel)
             
@@ -207,6 +207,7 @@ class Broker_Mqtt(MyMQTTClass):
             if not found:
                 # print("Not found by looking, must force...")
                 # NOTE: Just shuffling so there is a chance that subtasks will be assigned to different RSUs and not just in the order they come in (if they are both tied for minimum queue lengths)
+                # IDEA: Check if this has an effect
                 random.shuffle(candidate_rsus)
                 candidate_rsus = sorted(candidate_rsus, key=lambda rsu: len(rsu.queue), reverse=False)
                 candidate_rsus[0].add_task_forced(subtask)
