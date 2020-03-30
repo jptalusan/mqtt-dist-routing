@@ -38,20 +38,20 @@ class Route_Executor():
     def __init__(self, x, y):
         if not os.path.exists(os.path.join(os.getcwd(), 'data')):
             raise OSError("Must first download data, see README.md")
-        data_dir = os.path.join(os.getcwd(), 'data')
+        self.data_dir = os.path.join(os.getcwd(), 'data')
 
-        if not os.path.exists(os.path.join(data_dir, 'sub_graphs')):
-            os.mkdir(os.path.join(data_dir, 'sub_graphs'))
-        sub_graphs_dir = os.path.join(data_dir, 'sub_graphs')
+        if not os.path.exists(os.path.join(self.data_dir, 'sub_graphs')):
+            os.mkdir(os.path.join(self.data_dir, 'sub_graphs'))
+        sub_graphs_dir = os.path.join(self.data_dir, 'sub_graphs')
 
-        if not os.path.exists(os.path.join(data_dir, 'historical_speeds')):
-            os.mkdir(os.path.join(data_dir, 'historical_speeds'))
-        self.historical_speeds_dir = os.path.join(data_dir, 'historical_speeds')
+        if not os.path.exists(os.path.join(self.data_dir, 'historical_speeds')):
+            os.mkdir(os.path.join(self.data_dir, 'historical_speeds'))
+        self.historical_speeds_dir = os.path.join(self.data_dir, 'historical_speeds')
 
         # DICTIONARIES
-        if not os.path.exists(os.path.join(data_dir, 'avg_speeds')):
-            os.mkdir(os.path.join(data_dir, 'avg_speeds'))
-        self.avg_speeds_dir = os.path.join(data_dir, 'avg_speeds')
+        if not os.path.exists(os.path.join(self.data_dir, 'avg_speeds')):
+            os.mkdir(os.path.join(self.data_dir, 'avg_speeds'))
+        self.avg_speeds_dir = os.path.join(self.data_dir, 'avg_speeds')
 
         # print(sub_graphs_dir)
         self.sub_graph_dict = geo_utils.read_saved_sub_graphs(sub_graphs_dir)
@@ -61,10 +61,7 @@ class Route_Executor():
         # Polys are just the larger boundaries to be used to "decrease" the number since we still use geohashing and it is still limited.
         polys = gb.divide_grid(target_area, (x, y))
 
-        # some details
-        # print("Total Target area: {} km2".format(ag.get_km2_area(target_area)))
-        # print("Grids: {} km2".format(ag.get_km2_area(polys[0])))
-
+        # NOTE: Only needed by some functions, maybe better to move?!
         self.rsu_arr = []
         for i in range(x):
             for j in range(y):
@@ -75,11 +72,7 @@ class Route_Executor():
                 r.set_max_size(x, y)
                 self.rsu_arr.append(r)
 
-        file_path = os.path.join(data_dir, "{}-{}-rsu_arr.pkl".format(x, y))
-        with open(file_path, 'wb') as handle:
-            pickle.dump(self.rsu_arr, handle)
-
-        file_path = os.path.join(data_dir, '{}-{}-G.pkl'.format(x, y))
+        file_path = os.path.join(self.data_dir, '{}-{}-G.pkl'.format(x, y))
         with open(file_path, 'rb') as handle:
             self.whole_graph = pickle.load(handle)
         # print("Whole graph: ", len(self.whole_graph.nodes))
@@ -410,7 +403,12 @@ class Route_Executor():
             # TODO: Check if tmc_id is within the local data
             # Give some delay if not the local, depends on distance from optimal rsu
             # For now just give a delay of 1 hour
-            if tmc_id in LOCAL_RSU_VARS.TMC_DICT[GRID_ID]:
+            parent_grid = GRID_ID
+            for k, v in LOCAL_RSU_VARS.SUB_GRIDS.items():
+                if GRID_ID in v:
+                    parent_grid = k
+            
+            if tmc_id in LOCAL_RSU_VARS.TMC_DICT[parent_grid]:
                 actual_time_window = time_window
             else:
                 # Get the grid_id where this tmc_id is from
@@ -420,7 +418,7 @@ class Route_Executor():
                         break
                 
                 # Use manhattan distance as the delay
-                r1 = geo_utils.get_rsu_by_grid_id(self.rsu_arr, GRID_ID)
+                r1 = geo_utils.get_rsu_by_grid_id(self.rsu_arr, parent_grid)
                 r2 = geo_utils.get_rsu_by_grid_id(self.rsu_arr, other_rsu)
                 delay = r1.get_manhattan_distance(r2)
         
@@ -444,10 +442,11 @@ class Route_Executor():
         return average_speed_at_time_window
 
     # HACK: The with_neighbors is a work around because else it has no idea of others, or i should load all?
+    # FIXME: Changed directory to accomodate other grid dimensions, but for now, hard coding 5x5
     # IDEA: Local should be more granular, but then i would need to change even the request/query to include more granularity in the time_window
     def get_speeds_hash_for_grid(self, grid_id, with_neighbors=False):
         G = {}
-        file_path = os.path.join(self.avg_speeds_dir, '{}-avg_speeds.pkl'.format(grid_id))
+        file_path = os.path.join(self.avg_speeds_dir, '5x5/{}-avg_speeds.pkl'.format(grid_id))
         with open(file_path, 'rb') as handle:
             g = pickle.load(handle)
             G = {**G, **g}
@@ -458,7 +457,7 @@ class Route_Executor():
 
             for _, n in d.items():
                 if n:
-                    file_path = os.path.join(self.avg_speeds_dir, '{}-avg_speeds.pkl'.format(n.grid_id))
+                    file_path = os.path.join(self.avg_speeds_dir, '5x5/{}-avg_speeds.pkl'.format(n.grid_id))
                     with open(file_path, 'rb') as handle:
                         g = pickle.load(handle)
                         G = {**G, **g}

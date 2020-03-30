@@ -9,6 +9,8 @@ import threading
 import time
 import copy
 
+DEBUG = 0
+
 class Worker_Mqtt(MyMQTTClass):
     def __init__(self, client_id=None, host="localhost", port=1883, keep_alive=60, clean_session=True, mongodb_c=None, route_extractor=None, log_file=None, ):
         super().__init__(client_id, host, port, keep_alive, clean_session)
@@ -27,7 +29,7 @@ class Worker_Mqtt(MyMQTTClass):
         self._timer_task = threading.Thread(target=self.process_tasks, args = ())
         self._timer_task.start()
 
-        utils.print_log("started")
+        utils.print_log("{} started".format(self._client_id))
 
     def mqtt_on_message(self, mqttc, obj, msg):
         self.parse_topic(msg)
@@ -56,7 +58,8 @@ class Worker_Mqtt(MyMQTTClass):
             rsu = t_arr[-1]
             if rsu == self._client_id:
                 data = json.loads(msg.payload)
-                utils.print_log("RSU receives: {}".format(data['_id']))
+                if DEBUG == 1:
+                    utils.print_log("RSU receives: {}".format(data['_id']))
                 self.verify_append_task(Route_Task(data))
 
         if GLOBAL_VARS.RSU_TO_RSU in msg.topic:
@@ -65,8 +68,10 @@ class Worker_Mqtt(MyMQTTClass):
                 data = json.loads(msg.payload)
                 self.update_subtask(data)
                 if len(self._tasks) > 0:
-                    utils.print_log("Updated tasks:")
-                    [utils.print_log("\t{}:{}".format(t._id, t.next_node)) for t in self._tasks]
+                    if DEBUG == 1:
+                        utils.print_log("Updated tasks:")
+                        [utils.print_log("\t{}:{}".format(t._id, t.next_node)) for t in self._tasks]
+                    pass
 
         return True
     
@@ -75,7 +80,8 @@ class Worker_Mqtt(MyMQTTClass):
         next_node = update['next_node']
         for t in self._tasks:
             if t._id == u_id:
-                print("ID {} already exists, updated next_node".format(t._id))
+                if DEBUG == 1:
+                    print("ID {} already exists, updated next_node".format(t._id))
                 t.next_node = next_node
                 return True
         # Means this can be possibly an early subtask
@@ -95,13 +101,15 @@ class Worker_Mqtt(MyMQTTClass):
                 next_node = self._early_tasks[task._id]
                 task.next_node = next_node
             self._tasks.append(task)
-            utils.print_log("Appended {} to tasks".format(task._id))
+            if DEBUG == 1:
+                utils.print_log("Appended {} to tasks".format(task._id))
             return True
         else:
             for t in self._tasks:
                 if task._id == t._id:
                     if task.next_node is not None:
-                        print("ID {} already exists, updated next_node".format(task._id))
+                        if DEBUG == 1:
+                            print("ID {} already exists, updated next_node".format(task._id))
                         t.next_node = task.next_node
                         print(t.__dict__)
                         return True
@@ -138,9 +146,11 @@ class Worker_Mqtt(MyMQTTClass):
                         t_dict['route'] = r_int
                         t_dict['travel_time'] = route[0]
                         topic = utils.add_destination(GLOBAL_VARS.RESPONSE_TO_BROKER, self._client_id)
-                        utils.print_log("Done {} done with route".format(t_dict['_id']))
-                        utils.print_log("Sending {} to {}".format(t_dict['_id'], topic))
-                        utils.print_log("Removing {} from task queue and appending to processed_tasks".format(t_dict['_id']))
+
+                        if DEBUG == 1:
+                            utils.print_log("Done {} done with route".format(t_dict['_id']))
+                            utils.print_log("Sending {} to {}:rsu-{}".format(t_dict['_id'], topic.split("/")[-1], GLOBAL_VARS.WORKER[topic.split("/")[-1]]))
+                            utils.print_log("Removing {} from task queue and appending to processed_tasks".format(t_dict['_id']))
 
                         self._processed_tasks.append(t_dict['_id'])
                         self.send(topic, json.dumps(t_dict))
@@ -152,7 +162,8 @@ class Worker_Mqtt(MyMQTTClass):
                             rsu_rsu_dict['_id'] = "{}{}{}".format(t_dict['parsed_id'], next_step, t_dict['steps'])
                             rsu_rsu_dict['next_node'] = t_dict['route'][-1]
                             topic = utils.add_destination(GLOBAL_VARS.RSU_TO_RSU, next_rsu)
-                            utils.print_log("Sending {} update to rsu-{}".format(rsu_rsu_dict['_id'], utils.get_worker_from_topic(topic)))
+                            if DEBUG == 1:
+                                utils.print_log("Sending {} update to {}:rsu-{}".format(rsu_rsu_dict['_id'], topic.split("/")[-1], utils.get_worker_from_topic(topic)))
                             self.send(topic, json.dumps(rsu_rsu_dict))
 
                         self.remove_task(t_dict['_id'])

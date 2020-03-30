@@ -12,6 +12,8 @@ import common.src.utility as geo_utils
 import os
 import common.src.adjustable_RSU as ag
 
+DEBUG = 0
+
 class Broker_Mqtt(MyMQTTClass):
     def __init__(self, client_id=None, host="localhost", port=1883, keep_alive=60, clean_session=True, mongodb_c=None):
         super().__init__(client_id, host, port, keep_alive, clean_session)
@@ -54,6 +56,7 @@ class Broker_Mqtt(MyMQTTClass):
             self.generate_mongo_tasks_entry(tasks)
 
             start = utils.time_print(0)
+            utils.print_log("Starting sub-task allocation.")
             for task in tasks:
                 self.subtask_allocation(GLOBAL_VARS.NEIGHBOR_LEVEL, task)
             for task in tasks:
@@ -61,8 +64,8 @@ class Broker_Mqtt(MyMQTTClass):
             elapsed = utils.time_print(0) - start
             utils.print_log("Total allocation time: {} ms".format(elapsed))
 
-            # HACK: Why here?1
-            # time.sleep(1)
+            # # HACK: Add sleep so I can get the allocation time data
+            # time.sleep(5)
 
             self._tasks = tasks
             self._log_flag_once = False
@@ -92,7 +95,8 @@ class Broker_Mqtt(MyMQTTClass):
                                                               "travel_time": travel_time,
                                                               "route": route,
                                                               "next_node": route[-1]})
-                utils.print_log("Updated: {}".format(data['_id']))
+                if DEBUG == 1:
+                    utils.print_log("Updated: {}".format(data['_id']))
 
         self.start_unsent_tasks_thread()
 
@@ -180,6 +184,9 @@ class Broker_Mqtt(MyMQTTClass):
             optimal_rsu = gridB
         else:
             optimal_rsu = gridA
+
+        if DEBUG == 1:
+            print("Checking for: {}".format(optimal_rsu))
             
         if nlevel == 0:
             self._mongodb_c._db.tasks.update_one({"_id": data['_id']}, {'$set': {'rsu_assigned_to': optimal_rsu, 'allocation_time': utils.time_print(int)}})
@@ -195,24 +202,34 @@ class Broker_Mqtt(MyMQTTClass):
             for n in nn:
                 rsu = self._rsu_arr[n]
                 candidate_rsus.append(rsu)
-                res = rsu.add_task(self._nxg, self._rsu_arr, subtask, force=False)
+
+                res, gid = rsu.add_task(self._nxg, self._rsu_arr, subtask, use_sub_grids=GLOBAL_VARS.USE_SUB_GRIDS)
                 if res:
                     found = True
-                    self._mongodb_c._db.tasks.update_one({"_id": data['_id']}, {'$set': {'rsu_assigned_to': rsu.grid_id, 'allocation_time': utils.time_print(int)}})
+                    self._mongodb_c._db.tasks.update_one({"_id": data['_id']}, {'$set': {'rsu_assigned_to': gid, 'allocation_time': utils.time_print(int)}})
+                    utils.print_log("Assigned to: {}".format(gid))
                     break
                 '''
                 If not ok, move to the next one (keep which has lowest number)
                 '''
             # Get RSU with least number of queue
             if not found:
-                # print("Not found by looking, must force...")
+                if DEBUG == 1:
+                    print("Not found by looking, must force...")
                 # NOTE: Just shuffling so there is a chance that subtasks will be assigned to different RSUs and not just in the order they come in (if they are both tied for minimum queue lengths)
                 # IDEA: Check if this has an effect
                 random.shuffle(candidate_rsus)
                 candidate_rsus = sorted(candidate_rsus, key=lambda rsu: len(rsu.queue), reverse=False)
-                candidate_rsus[0].add_task_forced(subtask)
-                grid_id = candidate_rsus[0].grid_id
-                self._mongodb_c._db.tasks.update_one({"_id": data['_id']}, {'$set': {'rsu_assigned_to': grid_id, 'allocation_time': utils.time_print(int)}})
+                
+                if DEBUG == 1:
+                    [print(r) for r in candidate_rsus]
+                    if candidate_rsus[0]._sub_grids:
+                        [print(r) for r in candidate_rsus[0]._sub_grids]
+                        print("\n")
+                
+                _, gid = candidate_rsus[0].add_task_forced(subtask, use_sub_grids=GLOBAL_VARS.USE_SUB_GRIDS)
+                utils.print_log("Forced to: {}".format(gid))
+                self._mongodb_c._db.tasks.update_one({"_id": data['_id']}, {'$set': {'rsu_assigned_to': gid, 'allocation_time': utils.time_print(int)}})
 
             return
 
@@ -235,7 +252,8 @@ class Broker_Mqtt(MyMQTTClass):
                 self._mongodb_c.update_one("tasks", t_id, {"state": GLOBAL_VARS.TASK_STATES["SENT"]})
                 self._mongodb_c._db.tasks.update({'_id': t_id}, {'$inc': {'retry_count': 1}})
 
-                utils.print_log("Broker sending task {} to topic: rsu-{}".format(t_id, utils.get_worker_from_topic(topic)))
+                if DEBUG == 1:
+                    utils.print_log("Broker sending task {} to topic: rsu-{}".format(t_id, utils.get_worker_from_topic(topic)))
                 self.send(topic, utils.encode(payload))
 
             mongo_tasks = list(self._mongodb_c.find("tasks", {"state": {"$lt": GLOBAL_VARS.TASK_STATES["SENT"]}}))
