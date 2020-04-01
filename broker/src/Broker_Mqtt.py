@@ -207,7 +207,7 @@ class Broker_Mqtt(MyMQTTClass):
                 if res:
                     found = True
                     self._mongodb_c._db.tasks.update_one({"_id": data['_id']}, {'$set': {'rsu_assigned_to': gid, 'allocation_time': utils.time_print(int)}})
-                    utils.print_log("Assigned to: {}".format(gid))
+                    # utils.print_log("Assigned to: {}".format(gid))
                     break
                 '''
                 If not ok, move to the next one (keep which has lowest number)
@@ -228,7 +228,7 @@ class Broker_Mqtt(MyMQTTClass):
                         print("\n")
                 
                 _, gid = candidate_rsus[0].add_task_forced(subtask, use_sub_grids=GLOBAL_VARS.USE_SUB_GRIDS)
-                utils.print_log("Forced to: {}".format(gid))
+                # utils.print_log("Forced to: {}".format(gid))
                 self._mongodb_c._db.tasks.update_one({"_id": data['_id']}, {'$set': {'rsu_assigned_to': gid, 'allocation_time': utils.time_print(int)}})
 
             return
