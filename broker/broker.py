@@ -126,4 +126,5 @@ if __name__ == "__main__":
                             GLOBAL_VARS.SUB_RESPONSE_TO_BROKER, 
                             GLOBAL_VARS.PROCESSED_TO_BROKER,
                             GLOBAL_VARS.SIMULATED_QUERY_TO_BROKER,
+                            GLOBAL_VARS.SIMULATED_SINGLE_QUERY_TO_BROKER,
                             GLOBAL_VARS.ALLOCATION_STATUS_TO_BROKER])

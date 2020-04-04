@@ -89,7 +89,43 @@ def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
+def send_single_query(s, d, t):
+    x, y = 5, 5
+    queries = 1
+    if not os.path.exists(os.path.join(os.getcwd(), 'data')):
+        raise OSError("Must first download data, see README.md")
+    data_dir = os.path.join(os.getcwd(), 'data')
+
+    file_path = os.path.join(data_dir, '{}-{}-G.pkl'.format(x, y))
+    with open(file_path, 'rb') as handle:
+        nx_g = pickle.load(handle)
+
+    if not s:
+        s = random.choice(list(nx_g.nodes))
+    if not d:
+        d = random.choice(list(nx_g.nodes))
+    if not t:
+        t = random.randint(0,24)
+    try:
+        number_of_queries = queries
+        mqttc = MyMQTTClass()
+        mqttc.connect()
+        mqttc.open()
+        print("Query sent: {}".format(datetime.now().strftime("%d %b %Y %H:%M:%S.%f")))
+        payload = {'x': x, 'y': y, 'number_of_queries': 1, 's': s, 'd': d, 't': t}
+        print(payload)
+        
+        data = json.dumps(payload)
+        mqttc.send(GLOBAL_VARS.SIMULATED_SINGLE_QUERY_TO_BROKER, data)
+        mqttc.close()
+    except ValueError:
+        print("Enter an integer for number of queries.")
+
+
 if __name__ == '__main__':
+    # For sending a single query only
+    # send_single_query(None, None, None)
+
     parser = argparse.ArgumentParser()
     parser.add_argument("a")
     args = parser.parse_args()

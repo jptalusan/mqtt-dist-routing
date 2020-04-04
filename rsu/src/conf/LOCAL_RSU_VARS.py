@@ -17,6 +17,6 @@ SUB_GRIDS = {'SPBZuN': ['SPBQ4@', 'SPBQvA', 'SPBZs6', 'SPBZ77'],
              'SPEOxP': ['SPEOzp', 'SPEOkp', 'SPEOv@', 'SPEOoV'],
              'SPBbQt': ['SPBbOU', 'SPBbaT', 'SPBbSV', 'SPBbX9']}
 
-file_path = os.path.join('data/tmc_dict.pkl')
+file_path = os.path.join('data/5-5-tmc_dict.pkl')
 with open(file_path, 'rb') as handle:
     TMC_DICT = pickle.load(handle)

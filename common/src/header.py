@@ -46,6 +46,7 @@ def generate_query(G, no_of_queries):
     return pd.DataFrame(Q)
 
 def generate_single_query(G, s, d, t):
+    print("generate_single_query(G, {}, {}, {})".format(s, d, t))
     Q = []
     routes = []
     orig_node = s
@@ -66,7 +67,7 @@ def generate_single_query(G, s, d, t):
         q['r'] = route
         Q.append(q)
     except nx.NetworkXNoPath:
-#                 print('No path: {}:{}'.format(orig_node, dest_node))
+        print('No path: {}:{}'.format(orig_node, dest_node))
         pass
     return pd.DataFrame(Q)
 

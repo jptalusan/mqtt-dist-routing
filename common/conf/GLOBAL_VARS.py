@@ -13,6 +13,7 @@ SUB_RESPONSE_TO_BROKER="middleware/broker/response/+"
 PROCESSED_TO_BROKER="middleware/processed/+"
 
 SIMULATED_QUERY_TO_BROKER="middleware/broker/simulation_task"
+SIMULATED_SINGLE_QUERY_TO_BROKER="middleware/broker/simulation_single_task"
 
 ALLOCATION_STATUS_TO_RSU="middleware/status/"
 ALLOCATION_STATUS_TO_BROKER="middleware/broker/status"

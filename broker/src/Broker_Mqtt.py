@@ -47,6 +47,39 @@ class Broker_Mqtt(MyMQTTClass):
     def parse_topic(self, msg):
         t_arr = msg.topic.split("/")
 
+        if msg.topic == GLOBAL_VARS.SIMULATED_SINGLE_QUERY_TO_BROKER:
+            data = json.loads(utils.decode(msg.payload))
+            print("Broker receives : {}".format(data))
+            tasks = generator.get_single_task(self._mongodb_c, data['x'], data['y'], data['s'], data['d'], data['t'])
+            print(tasks)
+            print(type(tasks))
+            
+            self.generate_mongo_tasks_entry(tasks)
+
+            start = utils.time_print(0)
+            utils.print_log("Starting sub-task allocation.")
+            for task in tasks:
+                self.subtask_allocation(GLOBAL_VARS.NEIGHBOR_LEVEL, task)
+            for task in tasks:
+                self.assign_next_rsu(task)
+            elapsed = utils.time_print(0) - start
+            utils.print_log("Total allocation time: {} ms".format(elapsed))
+
+            # HACK: Add sleep so I can get the allocation time data
+            # time.sleep(5)
+
+            self._tasks = tasks
+            self._log_flag_once = False
+
+            self._task_start_time = utils.time_print(0)
+            # The placement here is purely for debugging
+            self._collect_tasks = threading.Thread(target=self.compile_tasks_by_id, args = ())
+            self._collect_tasks.start()
+            
+            self.send(GLOBAL_VARS.START_LOGGING, utils.encode("START"))
+
+            pass
+
         if msg.topic == GLOBAL_VARS.SIMULATED_QUERY_TO_BROKER:
             data = json.loads(utils.decode(msg.payload))
             print("Broker receives : {}".format(data))
@@ -104,6 +137,7 @@ class Broker_Mqtt(MyMQTTClass):
     # Unsent = 0, Sent = 1, Responded = 2, Task_done = 3
     def generate_mongo_tasks_entry(self, tasks):
         for task in tasks:
+            print(task)
             data = task.get_json()
             data['inquiry_time'] = utils.time_print(int)
             data['allocation_time'] = None
