@@ -106,6 +106,8 @@ def send_single_query(s, d, t):
         d = random.choice(list(nx_g.nodes))
     if not t:
         t = random.randint(0,24)
+
+    print(s,d, t)
     try:
         number_of_queries = queries
         mqttc = MyMQTTClass()
@@ -125,22 +127,23 @@ def send_single_query(s, d, t):
 if __name__ == '__main__':
     # For sending a single query only
     # send_single_query(None, None, None)
+    send_single_query(992, 1295, 2)
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("a")
-    args = parser.parse_args()
-    x, y = 5, 5
-    try:
-        number_of_queries = int(args.a)
-        mqttc = MyMQTTClass()
-        mqttc.connect()
-        mqttc.open()
-        print("Query sent: {}".format(datetime.now().strftime("%d %b %Y %H:%M:%S.%f")))
-        payload = {'x': x, 'y': y, 'number_of_queries': number_of_queries}
-        print(payload)
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("a")
+    # args = parser.parse_args()
+    # x, y = 5, 5
+    # try:
+    #     number_of_queries = int(args.a)
+    #     mqttc = MyMQTTClass()
+    #     mqttc.connect()
+    #     mqttc.open()
+    #     print("Query sent: {}".format(datetime.now().strftime("%d %b %Y %H:%M:%S.%f")))
+    #     payload = {'x': x, 'y': y, 'number_of_queries': number_of_queries}
+    #     print(payload)
         
-        data = json.dumps(payload)
-        mqttc.send(GLOBAL_VARS.SIMULATED_QUERY_TO_BROKER, data)
-        mqttc.close()
-    except ValueError:
-        print("Enter an integer for number of queries.")
+    #     data = json.dumps(payload)
+    #     mqttc.send(GLOBAL_VARS.SIMULATED_QUERY_TO_BROKER, data)
+    #     mqttc.close()
+    # except ValueError:
+    #     print("Enter an integer for number of queries.")

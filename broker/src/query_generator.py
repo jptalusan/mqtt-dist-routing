@@ -53,7 +53,7 @@ def write_queries_to_mongodb(mongodb, query_df):
     print("Finished writing")
 
 def get_single_task(mongodb, x, y, s, d, t):
-    print("get_single_task({}, {}., ({}, {}, {}))".format(x, y, s, d, t))
+    print("get_single_task({}, {}, ({}, {}, {}))".format(x, y, s, d, t))
     start = time_print(0)
 
     if not os.path.exists(os.path.join(os.getcwd(), 'data')):
