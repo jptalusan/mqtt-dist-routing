@@ -40,10 +40,12 @@ if __name__ == "__main__":
             os.remove(log_file)
         except OSError:
             pass
-        mqttc = Worker_Mqtt(host="mqtt", client_id=client_id, route_extractor=r_ex, log_file=log_file, mongodb_c=None)
+        # mqttc = Worker_Mqtt(host="mqtt", client_id=client_id, route_extractor=r_ex, log_file=log_file, mongodb_c=None)
+        mqttc = Worker_Mqtt(host="163.221.129.155", port=1883, client_id=client_id, route_extractor=r_ex, log_file=log_file, mongodb_c=None)
 
     mqttc.connect()
-    mqttc.start_sub_thread([GLOBAL_VARS.START_LOGGING,
+    mqttc.start_sub_thread(["TEST",
+                            GLOBAL_VARS.START_LOGGING,
                             GLOBAL_VARS.STOP_LOGGING,
                             "{}{}".format(GLOBAL_VARS.ALLOCATION_STATUS_TO_RSU, GRID_ID), 
                             "{}{}".format(GLOBAL_VARS.BROKER_TO_RSU, GRID_ID), 

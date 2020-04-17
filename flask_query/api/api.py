@@ -56,7 +56,7 @@ def send_single_query(s, d, t):
     print(s,d, t)
     try:
         number_of_queries = queries
-        mqttc = MyMQTTClass()
+        mqttc = MyMQTTClass(host="163.221.129.155")
         mqttc.connect()
         mqttc.open()
         print("Query sent: {}".format(datetime.now().strftime("%d %b %Y %H:%M:%S.%f")))
@@ -64,10 +64,13 @@ def send_single_query(s, d, t):
         print(payload)
         
         data = json.dumps(payload)
-        mqttc.send(GLOBAL_VARS.SIMULATED_SINGLE_QUERY_TO_BROKER, data)
+        # mqttc.send(GLOBAL_VARS.SIMULATED_SINGLE_QUERY_TO_BROKER, data)
+        mqttc._mqttc.publish(GLOBAL_VARS.SIMULATED_SINGLE_QUERY_TO_BROKER, data, response_topic="middleware/api-response")
         mqttc.close()
     except ValueError:
         print("Enter an integer for number of queries.")
+
+    
 
 @app.route('/form_to_json', methods=['GET'])
 def refresh():
