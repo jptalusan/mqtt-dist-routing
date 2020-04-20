@@ -7,8 +7,8 @@ Right now this application is limited to x86 devices. Raspberry Pi or ARM builds
 # Decentralized Route Planning  
 1. Utilizes real world data from a mid-level U.S. city.
 2. Needs the following docker containers to function:  
-    * MongoDB  
-    * MQTT Broker  
+    * [MongoDB](https://hub.docker.com/_/mongo)  
+    * [MQTT](https://hub.docker.com/_/eclipse-mosquitto) Broker  
     * RSUs  
     * Broker  
 3. Download the data from this link: https://drive.google.com/drive/folders/1njQ55vqPLOETDq5yGi7O16-mIau7iqIj?usp=sharing  
@@ -47,6 +47,8 @@ Right now this application is limited to x86 devices. Raspberry Pi or ARM builds
 ** Edit common/conf/GLOBAL_VARS.py **
 * For the timeout duration, queue limit and neighbor levels.  
 
+***
+
 ### Different hosts  
 1. Edit broker/broker.py and rsu/rsu.py and edit the Mqtt and MongoDB addresses.  
 2. Edit docker-compose.yml and at the bottom make the following changes  
@@ -62,11 +64,11 @@ networks:
 
 ## Task Generation python  
 * Though i changed it substatinally, so might not need to do the conda environment.  
-1. conda env create -f environment.yml  
+`conda env create -f environment.yml`  
 
 ### If want to test only on a single query  
 * Run the code without any changes an it will send a query with parameters (992, 1295, 2).  
-1. python -O query.py  
+`python -O query.py`  
 
 ### If want to test multiple queries sent concurrently  
 * Comment out: send_single_query(992, 1295, 2)  
@@ -92,7 +94,7 @@ networks:
     # except ValueError:
     #     print("Enter an integer for number of queries.")
 ```
-1. python -O query.py XXX  
+`python -O query.py XXX`  
 * Where X is the number of queries you wish to send  
 
 ## Viewing results  
@@ -108,10 +110,13 @@ networks:
 * <ENTER app github here>
 
 # References  
-* https://hub.docker.com/repository/docker/linusmotu/rsu-base  
+* [rsu-base docker image](https://hub.docker.com/repository/docker/linusmotu/rsu-base)  
 * This is the docker image that will be used by both RSU and Broker. It contains route planning packages as well as a modified version of networkx and osmnx.  
 * Please see the link for more information.  
 
-```
-J. P. Talusan, M. Wilbur, A. Dubey, and K. Yasumoto.  On decentralizedroute planning using the road side units as computing resources.  In 2020IEEE International Conference on Fog Computing (ICFC), 2020 (Accepted)
-```
+> J. P. Talusan, M. Wilbur, A. Dubey, and K. Yasumoto.  
+> On decentralizedroute planning using the road side units as computing resources.  
+> In 2020IEEE International Conference on Fog Computing (ICFC), 2020 (Accepted)  
+
+# Information  
+For more information, kindly send an email to <jptalusan@gmail.com>
