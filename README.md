@@ -64,11 +64,11 @@ networks:
 
 ## Task Generation python  
 * Though i changed it substatinally, so might not need to do the conda environment.  
-`conda env create -f environment.yml`  
+* `conda env create -f environment.yml`  
 
 ### If want to test only on a single query  
 * Run the code without any changes an it will send a query with parameters (992, 1295, 2).  
-`python -O query.py`  
+* `python -O query.py`  
 
 ### If want to test multiple queries sent concurrently  
 * Comment out: send_single_query(992, 1295, 2)  
@@ -94,7 +94,7 @@ networks:
     # except ValueError:
     #     print("Enter an integer for number of queries.")
 ```
-`python -O query.py XXX`  
+* `python -O query.py XXX`  
 * Where X is the number of queries you wish to send  
 
 ## Viewing results  
@@ -115,7 +115,7 @@ networks:
 * Please see the link for more information.  
 
 > J. P. Talusan, M. Wilbur, A. Dubey, and K. Yasumoto.  
-> On decentralizedroute planning using the road side units as computing resources.  
+> On decentralized route planning using the road side units as computing resources.  
 > In 2020IEEE International Conference on Fog Computing (ICFC), 2020 (Accepted)  
 
 # Information  
