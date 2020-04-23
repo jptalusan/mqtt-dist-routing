@@ -19,7 +19,6 @@ import common.src.basic_utils as utils
 *r: route
 '''
 def generate_query(G, no_of_queries):
-    print("generate_query()")
     Q = []
     routes = []
     for _ in range(no_of_queries):
@@ -47,7 +46,7 @@ def generate_query(G, no_of_queries):
     return pd.DataFrame(Q)
 
 def generate_single_query(G, s, d, t):
-    print("generate_query()")
+    print("generate_single_query(G, {}, {}, {})".format(s, d, t))
     Q = []
     routes = []
     orig_node = s
@@ -68,7 +67,7 @@ def generate_single_query(G, s, d, t):
         q['r'] = route
         Q.append(q)
     except nx.NetworkXNoPath:
-#                 print('No path: {}:{}'.format(orig_node, dest_node))
+        print('No path: {}:{}'.format(orig_node, dest_node))
         pass
     return pd.DataFrame(Q)
 
@@ -77,7 +76,7 @@ def generate_single_query(G, s, d, t):
 # grid_id is not always available?
 def gen_SG(G, Qdf):
     sg_list = []
-    for index, row in Qdf.iterrows():
+    for _, row in Qdf.iterrows():
         route = row['r']
         sg = []
         for i, n in enumerate(route):
@@ -89,13 +88,10 @@ def gen_SG(G, Qdf):
                 
             if 'is_bounds' in node:
                 if node['is_bounds']:
-#                     print(n, '\t', node['boundaries'])
                     pass
                 else:
-#                     print(n, '\t', node['grid_id'])
                     if node['grid_id'] not in sg:
                         sg.append(node['grid_id'])
-#         print("\n")
         sg_list.append(list(sg))
     return sg_list
 
@@ -109,7 +105,7 @@ def get_trunc_task_id(t_id):
 # ID, Node, Grid1, Grid2, Time
 def generate_tasks(Qdf): 
     task_list = []
-    for index, row in Qdf.iterrows():
+    for _, row in Qdf.iterrows():
         t_id = row.t_id
         og = copy.copy(row['og'])
         s = row.s
@@ -141,6 +137,9 @@ def generate_tasks(Qdf):
             task_json['state'] = GLOBAL_VARS.TASK_STATES["UNSENT"]
             task_json['next_node'] = None
             task_json['inquiry_time'] = utils.time_print(0)
+            task_json['next_rsu'] = None
+            task_json['rsu_assigned_to'] = None
+            task_json['route'] = None
             task_list.append(Task(task_json))
         task_list.extend(list(pairs))
     return task_list

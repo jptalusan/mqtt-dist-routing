@@ -28,7 +28,6 @@ def specify_task(task_list, parsed_id):
 def generate_task_from_sdt(s, d, t):
     pass
 
-# TODO: Can i add another column that states how many RSUs are used?
 def write_queries_to_mongodb(mongodb, query_df):
     print("write_queries_to_mongodb()")
     # print(query_df.head())
@@ -52,6 +51,38 @@ def write_queries_to_mongodb(mongodb, query_df):
             print("{} already exists.".format(t_id))
             
     print("Finished writing")
+
+def get_single_task(mongodb, x, y, s, d, t):
+    print("get_single_task({}, {}, ({}, {}, {}))".format(x, y, s, d, t))
+    start = time_print(0)
+
+    if not os.path.exists(os.path.join(os.getcwd(), 'data')):
+        raise OSError("Must first download data, see README.md")
+    data_dir = os.path.join(os.getcwd(), 'data')
+
+    file_path = os.path.join(data_dir, '{}-{}-G.pkl'.format(x, y))
+    
+    print("CHECK1")
+    with open(file_path, 'rb') as handle:
+        nx_g = pickle.load(handle)
+
+    print("CHECK2")
+    Qdf = generator.generate_single_query(nx_g, s, d, t)
+    print(Qdf)
+
+    write_queries_to_mongodb(mongodb, Qdf)
+    a = generator.gen_SG(nx_g, Qdf)
+    Qdf = Qdf.assign(og = a)
+
+    task_list = generator.generate_tasks(Qdf)
+
+    elapsed = time_print(0) - start
+    print("Run time: {} ms".format(elapsed))
+
+    if sorted:
+        task_list.sort(key=lambda x: x.step, reverse=False)
+    return task_list
+
 
 def get_tasks(mongodb, x, y, queries, sorted=True):
     print("get_tasks({}, {}, {})".format(x, y, queries))

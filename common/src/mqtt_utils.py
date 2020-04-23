@@ -23,8 +23,8 @@ class MyMQTTClass:
 
     def mqtt_on_connect(self, mqttc, obj, flags, rc):
         self._mqttc.connected_flag = True
-        if __debug__:
-            print("rc: "+str(rc))
+        # if __debug__:
+        #     print("Connected to MQTT")
 
     def mqtt_on_disconnect(self, client, userdata, rc):
         if rc != 0:
@@ -38,12 +38,14 @@ class MyMQTTClass:
             self._mqttc.publish("test/topic", msg.payload, qos=0, retain=False)
 
     def mqtt_on_publish(self, mqttc, obj, mid):
-        if __debug__:
-            print("Sent message: "+str(mid))
+        # if __debug__:
+        #     print("Sent message: "+str(mid))
+        pass
 
     def mqtt_on_subscribe(self, mqttc, obj, mid, granted_qos):
-        if __debug__:
-            print("Subscribed: "+str(mid)+" "+str(granted_qos))
+        # if __debug__:
+        #     print("Subscribed: "+str(mid)+" "+str(granted_qos))
+        pass
 
     def mqtt_on_log(self, mqttc, obj, level, string):
         if __debug__:

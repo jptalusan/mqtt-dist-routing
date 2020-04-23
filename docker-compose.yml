@@ -1,568 +1,406 @@
-version: "3.5"
+version: "2.2"
 services:
-  mqtt:
-    build: ./mqtt/
-    restart: on-failure
-    ports:
-      - "1883:1883"
-      - "9001:9001"
-    expose:
-      - 1883
-    volumes:
-      - ./mqtt/mosquitto/data:/mosquitto/data
-      - ./mqtt/mosquitto/config:/mosquitto/config
-      - ./mqtt/mosquitto/log:/mosquitto/log
-    networks: 
-      - network_test_bed
-
-  mongo:
-    image: mongo:4.2.3-bionic
-    container_name: mongo
-    restart: always
-    volumes:
-      - ./mongodb/data:/data/db
-      - ./mongodb/mongo.conf:/etc/mongod.conf
-      - ./mongodb/mongod.log:/var/log/mongodb/mongod.log
-    ports:
-      - '27017:27017'
-    expose:
-      - 27017
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${ME_CONFIG_MONGODB_ADMINUSERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${ME_CONFIG_MONGODB_ADMINPASSWORD}
-    environment:
-      - PYTHONUNBUFFERED=1
-      - MONGO_INITDB_DATABASE=admin
-    env_file:
-      - ./credentials.env
-    networks: 
-      - network_test_bed
-    command: 
-      - '--quiet'
-      - '--config'
-      - '/etc/mongod.conf'
-      - '--logpath'
-      - '/var/log/mongodb/mongod.log'
-    healthcheck:
-        test: ["CMD", "curl", "-f", "http://localhost:27017"]
-        interval: 30s
-        timeout: 15s
-        retries: 5
-
-  mongo-express:
-    image: mongo-express
-    ports:
-      - 8081:8081
-    restart: always
-    environment:
-      ME_CONFIG_MONGODB_PORT: ${ME_CONFIG_MONGODB_PORT}
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${ME_CONFIG_MONGODB_ADMINUSERNAME}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${ME_CONFIG_MONGODB_ADMINPASSWORD}
-      WAIT_HOSTS: mongo:27017
-    environment:
-      - PYTHONUNBUFFERED=1
-    env_file:
-      - ./credentials.env
-    networks: 
-      - network_test_bed
-    depends_on: 
-      - "mongo"
-    links:
-      - "mongo"
-
-  broker:
-    build: ./broker/
-    restart: on-failure
-    ports:
-      - "7000:7000"
-    expose:
-      - 7000
-    environment:
-      - PYTHONUNBUFFERED=1
-    volumes:
-      - ./broker:/usr/src/app:z
-      - ./common/:/usr/src/app/common:z
-    depends_on: 
-      - mongo
-      - mqtt
-    networks: 
-      - network_test_bed
-
   rsu-0000:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0000
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0001:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0001
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0002:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0002
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0003:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0003
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0004:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0004
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0005:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0005
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0006:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0006
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0007:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0007
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0008:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0008
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0009:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0009
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0010:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0010
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0011:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0011
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0012:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0012
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0013:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0013
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0014:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0014
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0015:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0015
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0016:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0016
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0017:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0017
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0018:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0018
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0019:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0019
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0020:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0020
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0021:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0021
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0022:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0022
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0023:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0023
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
   rsu-0024:
-    # build: ./rsu/
     image: linusmotu/rsu-base:1.0
-    restart: on-failure #on-failure
+    restart: on-failure
     volumes:
       - ./rsu:/usr/src/app:z
       - ./common/:/usr/src/app/common:z
     environment:
       - PYTHONUNBUFFERED=1
       - RSU_ID=0024
-    depends_on: 
-      - mqtt
-    networks: 
+    networks:
       - network_test_bed
-    command: 
+    command:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
 
-networks:
+networks: 
   network_test_bed:
+    name: network_test_bed
     driver: bridge

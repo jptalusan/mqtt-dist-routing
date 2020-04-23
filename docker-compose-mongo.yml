@@ -1,0 +1,76 @@
+version: "3.5"
+services:
+  mqtt:
+    build: ./mqtt/
+    restart: on-failure
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    expose:
+      - 1883
+    volumes:
+      - ./mqtt/mosquitto/data:/mosquitto/data
+      - ./mqtt/mosquitto/config:/mosquitto/config
+      - ./mqtt/mosquitto/log:/mosquitto/log
+    networks: 
+      - network_test_bed
+      
+  mongo:
+    image: mongo:4.2.3-bionic
+    container_name: mongo
+    restart: always
+    volumes:
+      - ./mongodb/data:/data/db
+      - ./mongodb/mongo.conf:/etc/mongod.conf
+      - ./mongodb/mongod.log:/var/log/mongodb/mongod.log
+    ports:
+      - '27017:27017'
+    expose:
+      - 27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${ME_CONFIG_MONGODB_ADMINUSERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${ME_CONFIG_MONGODB_ADMINPASSWORD}
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MONGO_INITDB_DATABASE=admin
+    env_file:
+      - ./credentials.env
+    networks: 
+      - network_test_bed
+    command: 
+      - '--quiet'
+      - '--config'
+      - '/etc/mongod.conf'
+      - '--logpath'
+      - '/var/log/mongodb/mongod.log'
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:27017"]
+        interval: 30s
+        timeout: 15s
+        retries: 5
+
+  mongo-express:
+    image: mongo-express
+    ports:
+      - 8081:8081
+    restart: always
+    environment:
+      ME_CONFIG_MONGODB_PORT: ${ME_CONFIG_MONGODB_PORT}
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${ME_CONFIG_MONGODB_ADMINUSERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${ME_CONFIG_MONGODB_ADMINPASSWORD}
+      WAIT_HOSTS: mongo:27017
+    environment:
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - ./credentials.env
+    networks: 
+      - network_test_bed
+    depends_on: 
+      - "mongo"
+    links:
+      - "mongo"
+
+networks:
+  network_test_bed:
+    name: network_test_bed
+    driver: bridge

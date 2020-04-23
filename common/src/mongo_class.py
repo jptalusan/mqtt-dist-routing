@@ -6,7 +6,6 @@ import pandas as pd
 
 class MyMongoDBClass():
     def __init__(self, host="localhost", port=27017, db="admin", collection="tasks"):
-        print("MyMongoDBClass")
         self._mongoc = pymongo.MongoClient(host, port)
 
         self._db = self._mongoc[db]

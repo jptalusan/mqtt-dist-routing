@@ -1,5 +1,8 @@
 # TOPICS
+HEARTBEAT="middleware/rsu/heartbeat"
+
 BROKER_TO_RSU="middleware/rsu/"
+RSU_TO_RSU="middleware/rsu-rsu/"
 
 QUERY_TO_BROKER="middleware/broker/task"
 RESPONSE_TO_BROKER="middleware/broker/response"
@@ -10,6 +13,7 @@ SUB_RESPONSE_TO_BROKER="middleware/broker/response/+"
 PROCESSED_TO_BROKER="middleware/processed/+"
 
 SIMULATED_QUERY_TO_BROKER="middleware/broker/simulation_task"
+SIMULATED_SINGLE_QUERY_TO_BROKER="middleware/broker/simulation_single_task"
 
 ALLOCATION_STATUS_TO_RSU="middleware/status/"
 ALLOCATION_STATUS_TO_BROKER="middleware/broker/status"
@@ -32,22 +36,33 @@ TASK_STATES = {
                 "ERROR": 99
                 }
 
-# Routes get lost because of the limitations in the available nodes
-# Some routes pass through boundaries that are at the corner of 4 grids/rsu
-TIMEOUT = 30000
-MAX_RETRIES = 25
+RSUS = {'0000': 'SPE_6g', '0001': 'SPE_Pa', '0002': 'SPBPqg', '0003': 'SPBQ@b', 
+        '0004': 'SPBR6h', '0005': 'SPEPyO', '0006': 'SPEPeO', '0007': 'SPB_DO', 
+        '0008': 'SPBZuN', '0009': 'SPBYyN', '0010': 'SPEP70', '0011': 'SPEPOe', 
+        '0012': 'SPB_r0', '0013': 'SPBZYd', '0014': 'SPBY71', '0015': 'SPEOxP', 
+        '0016': 'SPEOdP', '0017': 'SPBaCP', '0018': 'SPBbQt', '0019': 'SPBXxG', 
+        '0020': 'SPEO7z', '0021': 'SPEOOK', '0022': 'SPBarz', '0023': 'SPBb9J', 
+        '0024': 'SPBXhJ', '0025': 'SPBQ4@', '0026': 'SPBQvA', '0027': 'SPBZs6', 
+        '0028': 'SPBZ77', '0029': 'SPB_pP', '0030': 'SPB_uP', '0031': 'SPB_nt', 
+        '0032': 'SPB_wt', '0033': 'SPBZWF', '0034': 'SPBZTl', '0035': 'SPBZbn', 
+        '0036': 'SPBZNH', '0037': 'SPBY5O', '0038': 'SPBY@O', '0039': 'SPBY3s', 
+        '0040': 'SPBYBs', '0041': 'SPEOzp', '0042': 'SPEOkp', '0043': 'SPEOv@', 
+        '0044': 'SPEOoV', '0045': 'SPBbOU', '0046': 'SPBbaT', '0047': 'SPBbSV', 
+        '0048': 'SPBbX9'}
 
-RSUS = {"0000": "SPBbQt", "0005": "SPBY71", "0010": "SPEPyO", "0015": "SPBPqg", "0020": "SPBarz", 
-        "0001": "SPBXhJ", "0006": "SPBZYd", "0011": "SPEPeO", "0016": "SPBb9J", "0021": "SPEO7z", 
-        "0002": "SPB_DO", "0007": "SPB_r0", "0012": "SPBaCP", "0017": "SPBZuN", "0022": "SPE_Pa", 
-        "0003": "SPEOdP", "0008": "SPBQ@b", "0013": "SPEP70", "0018": "SPBR6h", "0023": "SPBXxG", 
-        "0004": "SPBYyN", "0009": "SPEOOK", "0014": "SPEPOe", "0019": "SPE_6g", "0024": "SPEOxP"}
-
-WORKER = {"SPBbQt": "0000", "SPBY71": "0005", "SPEPyO": "0010", "SPBPqg": "0015", "SPBarz": "0020", 
-          "SPBXhJ": "0001", "SPBZYd": "0006", "SPEPeO": "0011", "SPBb9J": "0016", "SPEO7z": "0021", 
-          "SPB_DO": "0002", "SPB_r0": "0007", "SPBaCP": "0012", "SPBZuN": "0017", "SPE_Pa": "0022", 
-          "SPEOdP": "0003", "SPBQ@b": "0008", "SPEP70": "0013", "SPBR6h": "0018", "SPBXxG": "0023", 
-          "SPBYyN": "0004", "SPEOOK": "0009", "SPEPOe": "0014", "SPE_6g": "0019", "SPEOxP": "0024"}
+WORKER = {'SPBPqg': '0002', 'SPBQ4@': '0025', 'SPBQ@b': '0003', 'SPBQvA': '0026', 
+          'SPBR6h': '0004', 'SPBXhJ': '0024', 'SPBXxG': '0019', 'SPBY3s': '0039', 
+          'SPBY5O': '0037', 'SPBY71': '0014', 'SPBY@O': '0038', 'SPBYBs': '0040', 
+          'SPBYyN': '0009', 'SPBZ77': '0028', 'SPBZNH': '0036', 'SPBZTl': '0034', 
+          'SPBZWF': '0033', 'SPBZYd': '0013', 'SPBZbn': '0035', 'SPBZs6': '0027', 
+          'SPBZuN': '0008', 'SPB_DO': '0007', 'SPB_nt': '0031', 'SPB_pP': '0029', 
+          'SPB_r0': '0012', 'SPB_uP': '0030', 'SPB_wt': '0032', 'SPBaCP': '0017', 
+          'SPBarz': '0022', 'SPBb9J': '0023', 'SPBbOU': '0045', 'SPBbQt': '0018', 
+          'SPBbSV': '0047', 'SPBbX9': '0048', 'SPBbaT': '0046', 'SPEO7z': '0020', 
+          'SPEOOK': '0021', 'SPEOdP': '0016', 'SPEOkp': '0042', 'SPEOoV': '0044', 
+          'SPEOv@': '0043', 'SPEOxP': '0015', 'SPEOzp': '0041', 'SPEP70': '0010', 
+          'SPEPOe': '0011', 'SPEPeO': '0006', 'SPEPyO': '0005', 'SPE_6g': '0000', 
+          'SPE_Pa': '0001'}
 
 RSU_ID = "RSU_ID"
 
@@ -57,6 +72,23 @@ QUERIES = "queries"
 
 LOG_RATE = 0.5 #in seconds
 
+# Routes get lost because of the limitations in the available nodes
+# Some routes pass through boundaries that are at the corner of 4 grids/rsu
+TIMEOUT = 300000
+MAX_RETRIES = 5
+
 NEIGHBOR_LEVEL = 1
-QUEUE_THRESHOLD = 5
+QUEUE_THRESHOLD = 100
 DELAY_THRESHOLD = 5
+
+USE_SUB_GRIDS = True
+
+from shapely.geometry import Polygon
+
+LNG_EXTEND = 0.0054931640625 * 4
+LAT_EXTEND = 0.00274658203125 * 4
+EXTENDED_DOWNTOWN_NASH_POLY = Polygon([(-86.878722 - LNG_EXTEND, 36.249723 + LAT_EXTEND),
+                              (-86.878722 - LNG_EXTEND, 36.107442 - LAT_EXTEND),
+                              (-86.68081100000001 + LNG_EXTEND, 36.107442 - LAT_EXTEND),
+                              (-86.68081100000001 + LNG_EXTEND, 36.249723 + LAT_EXTEND),
+                              (-86.878722 - LNG_EXTEND, 36.249723 + LAT_EXTEND)])

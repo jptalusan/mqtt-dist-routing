@@ -29,6 +29,9 @@ class Task(object):
         self.time_window = json_data['time_window']
         self.state = json_data['state']
         self.next_node = json_data['next_node']
+        self.next_rsu = json_data['next_rsu']
+        self.rsu_assigned_to = json_data['rsu_assigned_to']
+        self.route = json_data['route']
         
         self.parsed_id = self._id[0:-6]
         self.step = self._id[-6:-3]
@@ -79,6 +82,9 @@ class Task(object):
         d['step'] = self.step
         d['steps'] = self.steps
         d['retry_count'] = self.retry_count
+        d['next_rsu'] = self.next_rsu
+        d['rsu_assigned_to'] = self.rsu_assigned_to
+        d['route'] = self.route
         
         return d
 
