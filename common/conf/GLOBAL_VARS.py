@@ -81,7 +81,7 @@ NEIGHBOR_LEVEL = 1
 QUEUE_THRESHOLD = 100
 DELAY_THRESHOLD = 5
 
-USE_SUB_GRIDS = True
+USE_SUB_GRIDS = False
 
 from shapely.geometry import Polygon
 

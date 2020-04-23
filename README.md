@@ -50,6 +50,8 @@ Right now this application is limited to x86 devices. Raspberry Pi or ARM builds
 ***
 
 ### Different hosts  
+* Use commit: 12897330342e5e6f66ab5d471b947229cd4253ed for simplicity.
+
 1. Edit broker/broker.py and rsu/rsu.py and edit the Mqtt and MongoDB addresses.  
 2. Edit docker-compose.yml and at the bottom make the following changes  
 * Remove external: true and replace it with driver: bridge  
@@ -70,9 +72,17 @@ networks:
 * Run the code without any changes an it will send a query with parameters (992, 1295, 2).  
 * `python -O query.py`  
 
-### If want to test multiple queries sent concurrently  
+### If you want to test only single queries  
+* Uncomment the following code in query.py:  
+```
+    # For sending a single query only
+    # send_single_query(None, None, None)
+    # send_single_query(992, 1295, 2)
+```
+
+### If you want to test multiple queries sent concurrently  
 * Comment out: send_single_query(992, 1295, 2)  
-* Uncomment the following block of code:  
+* Uncomment the following block of code in query.py:  
 
 ```
     # parser = argparse.ArgumentParser()
@@ -96,6 +106,14 @@ networks:
 ```
 * `python -O query.py XXX`  
 * Where X is the number of queries you wish to send  
+
+### If you want to enable sub-grids  
+* Edit GLOBAL_VARS.py
+```
+    USE_SUB_GRIDS = True
+```
+
+* Edit docker-compose.yml and uncomment all other RSUs  
 
 ## Viewing results  
 * For this implementation, no results will be sent, but successful results can be viewed using mongo express  
