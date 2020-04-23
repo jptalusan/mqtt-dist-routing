@@ -100,9 +100,9 @@ networks:
 ## Viewing results  
 * For this implementation, no results will be sent, but successful results can be viewed using mongo express  
 1. http://localhost:8081/db/admin/queries  
-* Here you can view all the queries  
-3. http://localhost:8081/db/admin/tasks  
-* Here you can view all the sub-tasks which are derived from the queries  
+    * Here you can view all the queries  
+2. http://localhost:8081/db/admin/tasks  
+    * Here you can view all the sub-tasks which are derived from the queries  
 * Change localhost to your IP
 
 ## Actual testing with iOS application  
@@ -111,9 +111,10 @@ networks:
 
 # References  
 * [rsu-base docker image](https://hub.docker.com/repository/docker/linusmotu/rsu-base)  
-* This is the docker image that will be used by both RSU and Broker. It contains route planning packages as well as a modified version of networkx and osmnx.  
+* This is the docker image that will be used by both RSU and Broker. It contains route planning packages as well as a modified version of [networkx](https://github.com/linusmotu/networkx) and [osmnx](https://github.com/linusmotu/osmnx).  
 * Please see the link for more information.  
 
+* Please refer to this paper if you will use this.  
 > J. P. Talusan, M. Wilbur, A. Dubey, and K. Yasumoto.  
 > On decentralized route planning using the road side units as computing resources.  
 > In 2020IEEE International Conference on Fog Computing (ICFC), 2020 (Accepted)  
