@@ -12,7 +12,8 @@ Right now this application is limited to x86 devices. Raspberry Pi or ARM builds
     * RSUs  
     * Broker  
 3. Download the data from this link: https://drive.google.com/drive/folders/1njQ55vqPLOETDq5yGi7O16-mIau7iqIj?usp=sharing  
-  
+    * These data are based on a **5x5 grid division**. Meaning a base of 25 RSUs are used.  
+
 * Read our paper in the reference for more information.
 
 # Installation  
@@ -35,14 +36,14 @@ Right now this application is limited to x86 devices. Raspberry Pi or ARM builds
 
 ### All in same host
 1. docker-compose up  
-** Again, it needs the following files in the following directories: **  
-* These are based on the x, y division you use for your target area
-* broker/data/X-Y-G.pkl:  Divided network graph of the target area by (x, y)
-* broker/data/X-Y-rsu_arr.pkl: Generated on first run of rsu.  
-* rsu/data/avg_speeds/[RSU]-avg_speeds.pkl: Historical/averaged data based on the tmc_id.  
-* rsu/data/speeds/[RSU]-speeds.pkl: Actual dataframe data based on the tmc_id.  
-* rsu/data/sub_graphs/XXXX-[RSU].pkl: Sub-graphs of to be distributed to each RSU, based on the total network graph.  
-* rsu/data/X-Y-G.pkl: Total network graph of the target area.  
+    ** Again, it needs the following files in the following directories: **  
+    * These are based on the x, y division you use for your target area
+    * broker/data/X-Y-G.pkl:  Divided network graph of the target area by (x, y)
+    * broker/data/X-Y-rsu_arr.pkl: Generated on first run of rsu.  
+    * rsu/data/avg_speeds/[RSU]-avg_speeds.pkl: Historical/averaged data based on the tmc_id.  
+    * rsu/data/speeds/[RSU]-speeds.pkl: Actual dataframe data based on the tmc_id.  
+    * rsu/data/sub_graphs/XXXX-[RSU].pkl: Sub-graphs of to be distributed to each RSU, based on the total network graph.  
+    * rsu/data/X-Y-G.pkl: Total network graph of the target area.  
   
 ** Edit common/conf/GLOBAL_VARS.py **
 * For the timeout duration, queue limit and neighbor levels.  
