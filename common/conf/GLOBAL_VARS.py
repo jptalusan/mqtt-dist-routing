@@ -77,11 +77,14 @@ LOG_RATE = 0.5 #in seconds
 TIMEOUT = 300000
 MAX_RETRIES = 5
 
-NEIGHBOR_LEVEL = 1
+NEIGHBOR_LEVEL = 2
 QUEUE_THRESHOLD = 100
 DELAY_THRESHOLD = 5
 
 USE_SUB_GRIDS = False
+
+X_AXIS = 5
+Y_AXIS = 5
 
 from shapely.geometry import Polygon
 

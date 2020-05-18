@@ -9,6 +9,7 @@ from functools import partial
 from shapely.geometry import shape
 import shapely.ops as ops
 import datetime
+import numpy as np
 
 from .graph_breakdown import *
 
@@ -169,6 +170,20 @@ def plot_indices(rsu_arr, central, neighbors):
 
     return fig, ax
 
+def distance(x, y):
+    distance_between_pts = Point(x[1], x[0]).distance(Point(y[1], y[0]))
+    return round(distance_between_pts * 100)
+
+def sort_idx_by_distance(matx, maty, central, ns):
+    array = np.arange(matx * maty).reshape(matx, maty)
+    new_list = []
+    for n in ns:
+        result = np.where(array == central)
+        target = np.where(array == n)
+        md = distance(result, target)
+        new_list.append((n, md))
+    return new_list
+
 def get_neighbors_level(rsu_arr, r_idx, n_level):
     neighbors = []
 
@@ -181,14 +196,14 @@ def get_neighbors_level(rsu_arr, r_idx, n_level):
     
     others = []
     while n_level > 0:
-        neighbors = list(set(neighbors+others))
-        for n in neighbors:            
+        neighbors = list(set(neighbors + others))
+        for n in neighbors:
             for _, v in rsu_arr[n].get_neighbors(rsu_arr).items():
                 if not v:
                     continue
                 if v.get_idx() not in neighbors and \
-                v.get_idx() not in others and \
-                v.get_idx() != r_idx:
+                   v.get_idx() not in others and \
+                   v.get_idx() != r_idx:
                     others.append(v.get_idx())
         n_level -= 1
     return neighbors

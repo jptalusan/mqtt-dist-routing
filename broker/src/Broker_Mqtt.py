@@ -28,11 +28,11 @@ class Broker_Mqtt(MyMQTTClass):
             raise OSError("Must first download data, see README.md")
         data_dir = os.path.join(os.getcwd(), 'data')
 
-        file_path = os.path.join(data_dir, '{}-{}-rsu_arr.pkl'.format(5, 5))
+        file_path = os.path.join(data_dir, '{}-{}-rsu_arr.pkl'.format(GLOBAL_VARS.X_AXIS, GLOBAL_VARS.Y_AXIS))
         with open(file_path, 'rb') as handle:
             self._rsu_arr = pickle.load(handle)
 
-        file_path = os.path.join(data_dir, '{}-{}-G.pkl'.format(5, 5))
+        file_path = os.path.join(data_dir, '{}-{}-G.pkl'.format(GLOBAL_VARS.X_AXIS, GLOBAL_VARS.Y_AXIS))
         with open(file_path, 'rb') as handle:
             self._nxg = pickle.load(handle)
 
@@ -233,6 +233,13 @@ class Broker_Mqtt(MyMQTTClass):
             nn.insert(0, r.get_idx())
             found = False
             candidate_rsus = []
+
+            # Arranges the neighbors by distance from the most optimal grid in question
+            # DEBUG: This will cause some additional delays
+            nn = geo_utils.sort_idx_by_distance(GLOBAL_VARS.X_AXIS, GLOBAL_VARS.Y_AXIS, r.get_idx(), nn)
+            nn.sort(key=lambda x: x[1])
+            nn = [n[0] for n in nn]
+            
             for n in nn:
                 rsu = self._rsu_arr[n]
                 candidate_rsus.append(rsu)
@@ -252,6 +259,8 @@ class Broker_Mqtt(MyMQTTClass):
                     print("Not found by looking, must force...")
                 # NOTE: Just shuffling so there is a chance that subtasks will be assigned to different RSUs and not just in the order they come in (if they are both tied for minimum queue lengths)
                 # IDEA: Check if this has an effect
+                # Right now as the last resort, it appends to the RSU with least queue length
+                # If i don't randomize this, then it will assign to the least distance, which is just the most optimal one (may cause delay)
                 random.shuffle(candidate_rsus)
                 candidate_rsus = sorted(candidate_rsus, key=lambda rsu: len(rsu.queue), reverse=False)
                 
