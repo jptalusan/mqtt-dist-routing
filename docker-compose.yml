@@ -30,6 +30,7 @@ services:
       - 'python3'
       - '-u'
       - '/usr/src/app/rsu.py'
+      # - '/usr/src/app/benchmarks/bench.py'
 
   rsu-0001:
     image: linusmotu/rsu-base:1.0
