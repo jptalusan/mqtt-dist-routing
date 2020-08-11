@@ -80,6 +80,7 @@ class Route_Executor():
 
         self._mongodb = None
 
+
     def assign_mongodb(self, mongodb):
         self._mongodb = mongodb
 
@@ -393,9 +394,7 @@ class Route_Executor():
         time_hour = int(time_window.split(":")[0])
         time_minute = int(time_window.split(":")[1])
 
-        delay = GLOBAL_VARS.DELAY_FACTOR
-        delay_hour = delay // 60
-        delay_min  = delay % 60
+        delay_time_hour, delay_time_mins = utils.get_delay_time(time_hour, time_minute, delay = GLOBAL_VARS.DELAY_FACTOR)
 
         if 0 not in attr:
             key = random.choice(list(attr))
@@ -417,6 +416,7 @@ class Route_Executor():
             if tmc_id in LOCAL_RSU_VARS.TMC_DICT[parent_grid]:
                 actual_hour = time_hour
                 actual_min  = time_minute
+                average_speed_at_time_window = sensor_data[tmc_id][actual_hour][actual_min]
             else:
                 # Get the grid_id where this tmc_id is from
                 for k, v in LOCAL_RSU_VARS.TMC_DICT.items():
@@ -431,13 +431,14 @@ class Route_Executor():
         
                 # TODO: Fix this hardcoded
                 if GLOBAL_VARS.NEIGHBOR_LEVEL != 0:
-                    actual_hour = time_hour - delay_hour
-                    actual_min  = time_minute - delay_min
+                    delay_time_range = utils.get_range(0, delay_time_mins, granularity = GLOBAL_VARS.GRANULARITY)
+                    # print(f"Delayed: {delay_time_range}, time: {time_window}, delayed_time: {delay_time_hour}:{delay_time_mins}")
+                    vals = [sensor_data[tmc_id][delay_time_hour][minute] for minute in delay_time_range]
                 else:
-                    actual_hour = time_hour
-                    actual_min  = time_minute
+                    orig_time_range = utils.get_range(time_hour, time_minute, granularity = GLOBAL_VARS.GRANULARITY)
+                    vals = [sensor_data[tmc_id][time_hour][minute] for minute in orig_time_range]
+                average_speed_at_time_window = sum(vals) / len(vals)
 
-            average_speed_at_time_window = sensor_data[tmc_id][actual_hour][actual_min]
             time_traversed = length / average_speed_at_time_window
 
         return time_traversed

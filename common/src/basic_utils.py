@@ -46,3 +46,26 @@ def write_log(path, dict_entry):
 def get_worker_from_topic(topic):
     grid = topic.split("/")[-1]
     return GLOBAL_VARS.WORKER[grid]
+
+def get_delay_time(time_hour, time_minute, delay = GLOBAL_VARS.DELAY_FACTOR):
+    delay_hours = delay // GLOBAL_VARS.MIN_IN_HOUR
+    delay_mins  = delay % GLOBAL_VARS.MIN_IN_HOUR
+
+    delay_time_hour = (time_hour - delay_hours) % GLOBAL_VARS.HOUR_IN_DAY
+    delay_time_mins = (time_minute - delay_mins) % GLOBAL_VARS.MIN_IN_HOUR
+
+    if (time_minute - delay_time_mins) >= 0:
+        return delay_time_hour, delay_time_mins
+    return (delay_time_hour - 1) % GLOBAL_VARS.HOUR_IN_DAY, delay_time_mins
+
+def get_range(time_hour, time_minute, granularity = GLOBAL_VARS.GRANULARITY):
+    orig_time_start = time_minute - (time_minute % granularity)
+    if granularity == 1:
+        orig_time_end   = orig_time_start + granularity
+    else:
+        orig_time_end   = orig_time_start + granularity + 1
+
+    if orig_time_end >= GLOBAL_VARS.MIN_IN_HOUR:
+        orig_time_end = GLOBAL_VARS.MIN_IN_HOUR - 1
+    orig_time_range = range(orig_time_start, orig_time_end)
+    return orig_time_range

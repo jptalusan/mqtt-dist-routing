@@ -77,15 +77,19 @@ LOG_RATE = 0.5 #in seconds
 TIMEOUT = 7000000
 MAX_RETRIES = 5
 
-NEIGHBOR_LEVEL  = 2
+NEIGHBOR_LEVEL  = 1
 QUEUE_THRESHOLD = 100
 DELAY_THRESHOLD = 5
 
+MIN_IN_HOUR = 60
+HOUR_IN_DAY = 24
+# Granularity only affects the "delayed" values
+# in minutes and non-zero
+# bigger granularity, more numbers are averaged
+# Mostly should be same value as delay (i think)
+GRANULARITY = 10 % MIN_IN_HOUR
 # in minutes
 DELAY_FACTOR = 1
-
-# in minutes
-GRANULARITY = 1
 
 USE_SUB_GRIDS = True
 
