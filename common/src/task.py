@@ -89,7 +89,19 @@ class Task(object):
         return d
 
     def __repr__(self):
-        return "{:16.16}\t{}:{}\\{}\t{}".format(self._id, self.node, self.gridA, self.gridB, self.time_window)
+        hour = self.time_window.split(":")[0]
+        _min = self.time_window.split(":")[1]
+        if len(hour) < 2:
+            hour = hour.zfill(2)
+        if len(_min) < 2:
+            _min = _min.zfill(2)
+        return "{:16.16}\t{}:{}\\{}\t{}:{}".format(self._id, self.node, self.gridA, self.gridB, hour, _min)
 
     def __str__(self):
-        return "{:16.16}\t{}:{}\\{}\t{}".format(self._id, self.node, self.gridA, self.gridB, self.time_window)
+        hour = self.time_window.split(":")[0]
+        _min = self.time_window.split(":")[1]
+        if len(hour) < 2:
+            hour = hour.zfill(2)
+        if len(_min) < 2:
+            _min = _min.zfill(2)
+        return "{:16.16}\t{}:{}\\{}\t{}:{}".format(self._id, self.node, self.gridA, self.gridB, hour, _min)

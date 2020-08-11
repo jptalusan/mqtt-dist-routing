@@ -152,7 +152,8 @@ class Route_Executor():
         for b in bounds_list:
             try:
                 # (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node, b, self.get_travel_time_from_database, G, time_window=time)
-                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node, b, self.get_avg_speed_at_edge, G, time_window=time)
+                # (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node, b, self.get_avg_speed_at_edge, G, time_window=time)
+                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node, b, self.get_avg_speed_at_edge_dynamic, G, time_window=time)
                 if total_time < fastest:
                     fastest = total_time
                     route = avg_speed_route
@@ -202,7 +203,8 @@ class Route_Executor():
             try:
                 sg = self.whole_graph
                 # (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node2, node1, self.get_travel_time_from_database, G, time_window=time)
-                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node2, node1, self.get_avg_speed_at_edge, G, time_window=time)
+                # (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node2, node1, self.get_avg_speed_at_edge, G, time_window=time)
+                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node2, node1, self.get_avg_speed_at_edge_dynamic, G, time_window=time)
                 if total_time < fastest:
                     fastest = total_time
                     route = avg_speed_route
@@ -229,7 +231,8 @@ class Route_Executor():
             try:
                 sg = self.whole_graph
                 # (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node1, gridA, self.get_travel_time_from_database, G, time_window=time)
-                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node1, gridA, self.get_avg_speed_at_edge, G, time_window=time)
+                # (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node1, gridA, self.get_avg_speed_at_edge, G, time_window=time)
+                (total_time, avg_speed_route) = nx.dijkstra_path_timed(sg, node1, gridA, self.get_avg_speed_at_edge_dynamic, G, time_window=time)
                 
 
                 if total_time < fastest:
@@ -381,6 +384,63 @@ class Route_Executor():
             return time_traversed
 
     ######## USES DICTIONARIES AND HOUR DELAYS ONLY ########
+    def get_avg_speed_at_edge_dynamic(self, start, end, attr, sensor_data=None, time_window=None):
+        tmc_id = None
+        length = None
+        # See JOURNAL_localdata_generator notebook
+        time_traversed = 10.791
+        
+        time_hour = int(time_window.split(":")[0])
+        time_minute = int(time_window.split(":")[1])
+
+        delay = GLOBAL_VARS.DELAY_FACTOR
+        delay_hour = delay // 60
+        delay_min  = delay % 60
+
+        if 0 not in attr:
+            key = random.choice(list(attr))
+            tmc_id = attr[key]['tmc_id']
+            length = attr[key]['length']
+        else:
+            if 0 in attr:
+                if 'tmc_id' in attr[0]:
+                    tmc_id = attr[0]['tmc_id']
+                if 'length' in attr[0]:
+                    length = attr[0]['length']
+        
+        if tmc_id and tmc_id in sensor_data:
+            parent_grid = GRID_ID
+            for k, v in LOCAL_RSU_VARS.SUB_GRIDS.items():
+                if GRID_ID in v:
+                    parent_grid = k
+            
+            if tmc_id in LOCAL_RSU_VARS.TMC_DICT[parent_grid]:
+                actual_hour = time_hour
+                actual_min  = time_minute
+            else:
+                # Get the grid_id where this tmc_id is from
+                for k, v in LOCAL_RSU_VARS.TMC_DICT.items():
+                    if tmc_id in v:
+                        other_rsu = k
+                        break
+                
+                # Use manhattan distance as the delay
+                r1 = geo_utils.get_rsu_by_grid_id(self.rsu_arr, parent_grid)
+                r2 = geo_utils.get_rsu_by_grid_id(self.rsu_arr, other_rsu)
+                delay = r1.get_manhattan_distance(r2)
+        
+                # TODO: Fix this hardcoded
+                if GLOBAL_VARS.NEIGHBOR_LEVEL != 0:
+                    actual_hour = time_hour - delay_hour
+                    actual_min  = time_minute - delay_min
+                else:
+                    actual_hour = time_hour
+                    actual_min  = time_minute
+
+            average_speed_at_time_window = sensor_data[tmc_id][actual_hour][actual_min]
+            time_traversed = length / average_speed_at_time_window
+
+        return time_traversed
 
     def get_avg_speed_at_edge(self, start, end, attr, sensor_data=None, time_window=None):
         tmc_id = None
@@ -446,7 +506,8 @@ class Route_Executor():
     # IDEA: Local should be more granular, but then i would need to change even the request/query to include more granularity in the time_window
     def get_speeds_hash_for_grid(self, grid_id, with_neighbors=False):
         G = {}
-        file_path = os.path.join(self.avg_speeds_dir, '5x5/{}-avg_speeds.pkl'.format(grid_id))
+        file_path = os.path.join(self.avg_speeds_dir, f'one_minute/{grid_id}_dict_avg_speeds_minute.pkl')
+        # file_path = os.path.join(self.avg_speeds_dir, '5x5/{}-avg_speeds.pkl'.format(grid_id))
         with open(file_path, 'rb') as handle:
             g = pickle.load(handle)
             G = {**G, **g}
@@ -457,7 +518,8 @@ class Route_Executor():
 
             for _, n in d.items():
                 if n:
-                    file_path = os.path.join(self.avg_speeds_dir, '5x5/{}-avg_speeds.pkl'.format(n.grid_id))
+                    file_path = os.path.join(self.avg_speeds_dir, f'one_minute/{n.grid_id}_dict_avg_speeds_minute.pkl')
+                    # file_path = os.path.join(self.avg_speeds_dir, '5x5/{}-avg_speeds.pkl'.format(n.grid_id))
                     with open(file_path, 'rb') as handle:
                         g = pickle.load(handle)
                         G = {**G, **g}

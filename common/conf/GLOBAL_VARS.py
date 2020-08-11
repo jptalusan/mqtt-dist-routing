@@ -74,14 +74,20 @@ LOG_RATE = 0.5 #in seconds
 
 # Routes get lost because of the limitations in the available nodes
 # Some routes pass through boundaries that are at the corner of 4 grids/rsu
-TIMEOUT = 300000
+TIMEOUT = 7000000
 MAX_RETRIES = 5
 
-NEIGHBOR_LEVEL = 2
+NEIGHBOR_LEVEL  = 2
 QUEUE_THRESHOLD = 100
 DELAY_THRESHOLD = 5
 
-USE_SUB_GRIDS = False
+# in minutes
+DELAY_FACTOR = 1
+
+# in minutes
+GRANULARITY = 1
+
+USE_SUB_GRIDS = True
 
 X_AXIS = 5
 Y_AXIS = 5

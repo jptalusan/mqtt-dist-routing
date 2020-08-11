@@ -110,7 +110,7 @@ def generate_tasks(Qdf):
         og = copy.copy(row['og'])
         s = row.s
         d = row.d
-        t = row.t
+        t = str(row.t) + ':' + str(row.t_m)
         
         if len(og) >= 2:
             nodes = []

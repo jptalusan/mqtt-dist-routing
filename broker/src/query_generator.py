@@ -111,6 +111,11 @@ def get_tasks(mongodb, x, y, queries, sorted=True):
 
     write_queries_to_mongodb(mongodb, Qdf)
 
+    # Generate random minute values
+    random.seed(100)
+    minutes = random.choices(range(0, 59), k=number_of_queries)
+    Qdf.insert(4, "t_m", minutes, True)
+
     a = generator.gen_SG(nx_g, Qdf)
     Qdf = Qdf.assign(og = a)
 
