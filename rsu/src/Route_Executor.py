@@ -80,6 +80,27 @@ class Route_Executor():
 
         self._mongodb = None
 
+        # TODO: Fix or remove after use
+        if not os.path.exists(os.path.join(self.data_dir, 'quartiles')):
+            os.mkdir(os.path.join(self.data_dir, 'quartiles'))
+        quartiles_dir = os.path.join(self.data_dir, 'quartiles')
+
+        file_path = os.path.join(quartiles_dir, f'first_quartile.pkl')
+        with open(file_path, 'rb') as f:
+            self.first_quartile_list = pickle.load(f)
+
+        file_path = os.path.join(quartiles_dir, f'second_quartile.pkl')
+        with open(file_path, 'rb') as f:
+            self.second_quartile_list = pickle.load(f)
+
+        file_path = os.path.join(quartiles_dir, f'third_quartile.pkl')
+        with open(file_path, 'rb') as f:
+            self.third_quartile_list = pickle.load(f)
+
+        file_path = os.path.join(quartiles_dir, f'fourth_quartile.pkl')
+        with open(file_path, 'rb') as f:
+            self.fourth_quartile_list = pickle.load(f)
+        # END TODO
 
     def assign_mongodb(self, mongodb):
         self._mongodb = mongodb
@@ -394,7 +415,7 @@ class Route_Executor():
         time_hour = int(time_window.split(":")[0])
         time_minute = int(time_window.split(":")[1])
 
-        delay_time_hour, delay_time_mins = utils.get_delay_time(time_hour, time_minute, delay = GLOBAL_VARS.DELAY_FACTOR)
+        # delay_time_hour, delay_time_mins = utils.get_delay_time(time_hour, time_minute, delay = GLOBAL_VARS.DELAY_FACTOR)
 
         if 0 not in attr:
             key = random.choice(list(attr))
@@ -423,16 +444,22 @@ class Route_Executor():
                     if tmc_id in v:
                         other_rsu = k
                         break
-                
-                # Use manhattan distance as the delay
-                r1 = geo_utils.get_rsu_by_grid_id(self.rsu_arr, parent_grid)
-                r2 = geo_utils.get_rsu_by_grid_id(self.rsu_arr, other_rsu)
-                delay = r1.get_manhattan_distance(r2)
-        
+
                 # TODO: Fix this hardcoded
                 if GLOBAL_VARS.NEIGHBOR_LEVEL != 0:
+                    delay = GLOBAL_VARS.DELAY_FACTOR
+                    if GLOBAL_VARS.DYNAMIC_DELAY:
+                        code = other_rsu + '_' + tmc_id
+                        if code in self.first_quartile_list:
+                            delay = 60
+                        if code in self.second_quartile_list:
+                            delay = 30
+                        if code in self.third_quartile_list:
+                            delay = 10
+                        if code in self.fourth_quartile_list:
+                            delay = 5
+                    delay_time_hour, delay_time_mins = utils.get_delay_time(time_hour, time_minute, delay = delay)
                     delay_time_range = utils.get_range(0, delay_time_mins, granularity = GLOBAL_VARS.GRANULARITY)
-                    # print(f"Delayed: {delay_time_range}, time: {time_window}, delayed_time: {delay_time_hour}:{delay_time_mins}")
                     vals = [sensor_data[tmc_id][delay_time_hour][minute] for minute in delay_time_range]
                 else:
                     orig_time_range = utils.get_range(time_hour, time_minute, granularity = GLOBAL_VARS.GRANULARITY)

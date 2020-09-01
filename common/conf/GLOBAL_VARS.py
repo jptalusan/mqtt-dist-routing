@@ -89,7 +89,13 @@ HOUR_IN_DAY = 24
 # Mostly should be same value as delay (i think)
 GRANULARITY = 10 % MIN_IN_HOUR
 # in minutes
-DELAY_FACTOR = 1
+DELAY_FACTOR = 60
+
+# For use with the quantiles.
+DYNAMIC_DELAY = False
+
+# Time slice, to check effects of specific hours on the travel time accuracy
+TIME_ZONE = "WORKING_HOUR"
 
 USE_SUB_GRIDS = True
 

@@ -114,6 +114,25 @@ def get_tasks(mongodb, x, y, queries, sorted=True):
     # Generate random minute values
     random.seed(100)
     minutes = random.choices(range(0, 59), k=number_of_queries)
+
+    # Generate hours based on 'time-zone'
+    dead_time = [21, 22, 23, 0, 1, 2, 3, 4, 5]
+    morning_rush = [6, 7, 8, 9]
+    evening_rush = [15, 16, 17, 18]
+    working_hour = [10, 11, 12, 13, 14]
+    random_hours = range(0, 24)
+
+    if GLOBAL_VARS.TIME_ZONE == 'DEAD_TIME':
+        Qdf['t'] = random.choices(dead_time, k=number_of_queries)
+    elif GLOBAL_VARS.TIME_ZONE == 'MORNING_RUSH':
+        Qdf['t'] = random.choices(morning_rush, k=number_of_queries)
+    elif GLOBAL_VARS.TIME_ZONE == 'EVENING_RUSH':
+        Qdf['t'] = random.choices(evening_rush, k=number_of_queries)
+    elif GLOBAL_VARS.TIME_ZONE == 'WORKING_HOUR':
+        Qdf['t'] = random.choices(working_hour, k=number_of_queries)
+    else:
+        Qdf['t'] = random.choices(random_hours, k=number_of_queries)
+
     Qdf.insert(4, "t_m", minutes, True)
 
     a = generator.gen_SG(nx_g, Qdf)
